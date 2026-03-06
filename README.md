@@ -1,5 +1,5 @@
 <div align='center'>
-    <img src="./images/head.jpg" alt="alt text" width="100%">
+    <img src="./docs/images/diy-llm.png" alt="alt text" width="100%">
     <h1>Diy-LLM</h1>
 </div>
 
@@ -11,7 +11,7 @@
 </div>
 
 <div align="center">
-  <p><a href="https://xuhu0115.github.io/diy-llm/">📚 在线阅读地址</a></p>
+  <p><a href="https://datawhalechina.github.io/diy-llm/">📚 在线阅读地址</a></p>
   <h3>📚 带你系统性学习大语言模型</h3>
   <p><em>一座为中文学习者量身打造的"LLM炼丹工坊"</em></p>
 </div>
@@ -47,7 +47,7 @@
 | 章节 | 关键内容 | 配套作业 | 状态 |
 |------|----------|----------|------|
 | [前言](docs/前言.md) | 项目由来、背景及学习建议 | - | ✅ |
-| [第1章 工具使用](docs/chapter1) | W&B 使用与实验追踪 | - | ✅ |
+| [第1章 工具使用](docs/chapter1) | W&B 使用与实验追踪 | - | 📝 |
 | [第2章 分词器](docs/chapter2/chapter2_分词器.md) | 分词器原理与 BPE 实现 | [作业1](coursework/assignment1-basics/) | ✅ |
 | [第3章 PyTorch 与资源核算](docs/chapter3/) | 训练原语、算力/显存估算 | - | ✅ |
 | [第4章 语言模型架构与训练细节](docs/chapter4/chapter4_第四章语言模型架构和训练的技术细节.md) | Transformer 架构与训练要点 | [作业1](coursework/assignment1-basics/) | ✅ |
@@ -89,9 +89,9 @@ cd CS336-Chinese-co-construction
 
 ### 学习路径
 
-1️⃣ 理论学习 → 按章节顺序阅读 `docs/` 目录下的文档
-2️⃣ 实践练习 → 完成 `coursework/` 目录下的 6 个作业
-3️⃣ 深入理解 → 阅读代码实现，理解每个组件的设计
+1️⃣ 理论学习 → 按章节顺序阅读 `docs/` 目录下的文档  
+2️⃣ 实践练习 → 完成 `coursework/` 目录下的 6 个作业  
+3️⃣ 深入理解 → 阅读代码实现，理解每个组件的设计  
 
 ### 项目结构
 
@@ -127,6 +127,7 @@ CS336-Chinese-co-construction/
 ## 🔗 相关链接
 
 - **仓库地址**：https://github.com/xuhu0115/diy-llm
+- **在线阅读地址**：https://datawhalechina.github.io/diy-llm/
 - **原版课程主页**：[Stanford CS336 (Spring 2025)](https://stanford-cs336.github.io/spring2025/)
 - **原版课程项目**：https://github.com/stanford-cs336/spring2025-lectures/tree/main
 
@@ -158,8 +159,8 @@ CS336-Chinese-co-construction/
       </td>
       <td>
          <a href="https://github.com/kangkang-Adam"><img width="70" height="70" src="https://github.com/kangkang-Adam.png?s=40" alt="pic"></a><br>
-         <a href="https://github.com/kangkang-Adam">x</a> 
-        <p>项目负责人<br> x<br> x <br> 负责内容：第4、6、7、8、13章；作业2、4</p>
+         <a href="https://github.com/kangkang-Adam">李盛康</a> 
+        <p>项目负责人<br> Datawhale 成员<br> 西安邮电大学 <br> 负责内容：第4、6、7、8、13章；作业2、4</p>
       </td>
       <td>
          <a href="https://github.com/1iyouzhen"><img width="70" height="70" src="https://github.com/1iyouzhen.png?s=40" alt="pic"></a><br>
