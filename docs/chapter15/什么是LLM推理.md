@@ -33,14 +33,14 @@
 
 # 预训练
 
-&emsp;&emsp;我们或许会对预训练完成的LLM普遍持有这样一种看法：如果不经过进一步的提示工程或微调，模型在回答问题时往往直接给出最终答案而不展示中间推理过程，由此其认为不具备推理能力。
+&emsp;&emsp;我们或许会对预训练完成的LLM普遍持有这样一种看法：如果不经过进一步的提示工程或微调，模型在回答问题时往往直接给出最终答案而不展示中间推理过程，由此认为其不具备推理能力。
 
 <div align="center">
 <img width="951" height="522" alt="2" src="https://github.com/user-attachments/assets/dce337b4-5afb-49ea-90b3-669ced8d3d68" />
    <p>图2 无推理与推理的对比</p>
  </div>
 
-&emsp;&emsp;然而，Denny Zhou提出了一个不同的观点：预训练大模型实际上到准备推理的阶段了，只是在默认的**贪婪解码**（greedy decoding）方式下能力未被充分展现。换言之，问题不在于模型*缺乏*推理能力，而在于我们需要通过合适的解码策略，将模型内在的推理过程显式地引导出来，并且不依赖于提示工程或额外微调，而是对解码层方法的改变。
+&emsp;&emsp;然而，Denny Zhou提出了一个不同的观点：预训练大模型实际上已经具备推理能力了，只是在默认的**贪婪解码**（greedy decoding）方式下能力未被充分展现。换言之，问题不在于模型*缺乏*推理能力，而在于我们需要通过合适的解码策略，将模型内在的推理过程显式地引导出来，并且不依赖于提示工程或额外微调，而是对解码层方法的改变。
 
 ## 1 解码策略影响会推理能力的展现
 
@@ -164,6 +164,14 @@ $$P(A \to C) = 0.6 \times 0.6 = \mathbf{0.360}$$
 
 &emsp;&emsp;Denny Zhou在一次关于大语言模型推理能力的演讲中提出过一个重要观点：从本质上，大语言模型为一种概率模型。在预训练阶段，模型通过对海量文本数据进行学习，估计token与token之间的条件概率分布关联，从而能够在给定上下文的情况下预测下一个最可能出现的token。
 
+
+<div align="center">
+<img width="1200" height="500" alt="f6ffb7cdede20ccef60916b42b52209f" src="https://github.com/user-attachments/assets/6ebc754f-a818-479b-8f25-4d50f336b69e" />
+   <p>图7 不同大小均为1GB的数据集上的压缩率（压缩大小/原始大小），这个值越小越好。对于神经网络模型而言，原始压缩率不考虑参数大小，而调整后的压缩率则将参数大小视为压缩大小的一部分</p>
+ </div>
+
+*图7中，序列预测器Transformer、Llama 2和Chinchilla均为预测模型，研究者们通过算术编码将其用作无损压缩器。其中从头训练Transformer、Chinchilla模型。但是由此得到的Transformer会过拟合，而大型语言模型则是适用于多种数据的优秀压缩器。这里证明了一种观点——“语言建模即压缩”。*
+
 &emsp;&emsp;在预训练过程中，大多数语言模型通常以**最小化交叉熵损失**作为优化目标。该目标函数在信息论中具有明确含义：当模型的预测分布逐渐逼近真实数据分布时，交叉熵的最小化等价于提高模型对数据分布的编码效率。从信息论角度来看，这意味着模型逐渐学习到一种能够更有效表示自然语言统计结构的方式。这一观点可以追溯到香农（Claude Shannon）所提出的信息论框架：**如果能够更准确地预测符号出现的概率，就能够以更接近最优的方式对信息进行编码。**
 
 
@@ -178,6 +186,13 @@ $$P(A \to C) = 0.6 \times 0.6 = \mathbf{0.360}$$
 >当模型预测分布 $q(x)$ 越接近真实分布 $p(x)$ ， $D_{KL}$  散度就会越小。这意味着实际的平均编码长度 $H(p,q)$ 会越发逼近理论最优的平均编码长度 $H(p)$ ，从而能够以更接近最优的方式对信息进行编码。
 
 *因此，从信息论视角来看，语言建模任务可以被视为对自然语言分布的估计过程，其目标是在统计意义上逼近文本数据的最优编码。*
+
+
+<div align="center">
+   <img width="400" height="500" alt="84eeee8168d21c09968077c583793673" src="https://github.com/user-attachments/assets/9bd1602a-a11d-4273-b785-6ce34b7db3cc" />
+   <p>图8 分词器、BPE、词表大小和压缩率的相关研究</p>
+ </div>
+
 
 &emsp;&emsp;类似地，深度学习之父辛顿（Geoffrey Hinton）在一次演讲中也提出，大规模的模型在训练过程中通过对数据结构进行高度压缩，从而在参数中形成对世界结构的抽象表征。在这种视角下，大模型所表现出的“智能”，极有可能与其在训练过程中所获得的高效信息表示与压缩能力有关。
 
@@ -201,7 +216,7 @@ $$(Person, Relation) → Target Person$$
 &emsp;&emsp;2017年，Transformer架构的提出极大推动了自然语言处理的发展，也为后续大语言模型（LLM）的出现奠定了基础。直到2022年ChatGPT的出现，越来越多的人开始关注其中发挥核心作用的Transformer结构。2021年，[Mor Geva等人](https://aclanthology.org/2021.emnlp-main.446/)在中对Transformer中的重要组成部分——前馈神经网络（Feed-Forward Network, FFN）的内部机制进行了深入研究。
 
 
-![7](https://github.com/user-attachments/assets/aad2802b-6f4f-4c47-9693-bfae6f091d68)
+![9](https://github.com/user-attachments/assets/aad2802b-6f4f-4c47-9693-bfae6f091d68)
 
 
 &emsp;&emsp;在这项研究中，作者将FFN层中的神经元视为一种 **“键值记忆结构（key-value memory）”**。具体来说，研究者首先寻找能够**强烈激活某个神经元的输入前缀（triggering prefixes）**，并收集每个神经元最强的前25个触发前缀。随后，由人工专家对这些触发前缀进行语义类别标注，从而分析不同层神经元所捕获的语言模式。
@@ -226,7 +241,7 @@ $$(Person, Relation) → Target Person$$
 
 <div align="center">
 <img width="1062" height="477" alt="8" src="https://github.com/user-attachments/assets/21d53bf5-07cc-46c2-be68-83ba7b647865" />
-   <p>图8 类比推理</p>
+   <p>图10 类比推理</p>
 </div>
 
 
@@ -240,9 +255,10 @@ $$(Person, Relation) → Target Person$$
 
 &emsp;&emsp;在2025年Mind Lab对后训练的研究中，他们对不同规模的模型分别进行基于强化学习（RL）的后训练（使用LoRA实现参数高效更新），发现以规模更大或表现能力更强的LLM作为基座模型，得到的效果往往优于规模小或能力不足的模型。对此给出的解释是：RL依赖基座模型提供足够好的策略初始化（先验能力）——如果基座模型本身能力不足，RL便难以在其基础上探索到更合理的推理轨迹，后训练的收益也因此有限。
 
+
 <div align="center">
-<img width="854" height="486" alt="9" src="https://github.com/user-attachments/assets/f9a5e27e-de48-457f-92d4-f1c7fd5fd67c" />
-   <p>图9 李飞飞团队使用SFT训练Qwen-2.5B得到的s1</p>
+<img width="500" height="400" alt="55b4e799d76d192ec051d54481418b56" src="https://github.com/user-attachments/assets/5ef80d1a-ac58-4e01-b7d4-93bbee1ce838" />
+   <p>图11 Qwen2.5-base-7B vs Qwen2.5-RL-7B的准确率直方图</p>
 </div>
 
 &emsp;&emsp;在Yue等人的研究、李飞飞团队针对Qwen系列模型的1000条高质量数据微调研究，以及DeepSeek-R1的技术报告中，研究者们得出了一个的结论：尽管经过SFT（监督微调）或RL（强化学习）等后训练过程，LLM在解决具体任务时的表现有显著提升，但这并没有为模型注入新的基础知识或提升其绝对能力上限。一种合理的解释是：对于已完成预训练的LLM而言，后训练本质上是对预训练阶段所积累潜能的“激发”与“对齐”，换言之，预训练构筑了模型能力的基石，而后训练是让这些内化的能力以更符合人类预期或逻辑规范的方式展现出来。
@@ -259,7 +275,7 @@ $$(Person, Relation) → Target Person$$
 
 &emsp;&emsp;在RL微调过程中，若使用AI验证器（奖励模型）动态地为模型输出提供奖励信号（核心为：直接优化目标对象），则极有可能出现奖励欺骗（reward hacking）现象——即模型学会利用奖励模型的漏洞获取高奖励，而非真正提升输出质量。目前，缓解这一问题的一种方法是在优化目标中引入 $D_{KL}$ 散度惩罚项，以约束微调后的策略分布与原始参考策略分布之间的偏离程度。
 
->DeepSeek-R1的后训练过程中，模型学会自我反思修正错误的推理步骤等一些有助于推理的新能力，从而提升了模型的表现能力。
+>由基础模型强化学习微调得到DeepSeek-R1的过程中，模型学会自我反思修正错误的推理步骤等一些有助于推理的新能力，从而提升了模型的表现能力。
 
 ---
 
@@ -272,7 +288,7 @@ $$(Person, Relation) → Target Person$$
 
 <div align="center">
 <img width="1176" height="402" alt="10" src="https://github.com/user-attachments/assets/faa17b80-a23f-482c-b863-22aa0ac12549" />
-   <p>图10 (a) 一个6层GPT2模型在不同难度级别的算术任务上的表现呈倒U形曲线。随着任务难度的增加，准确率峰值逐渐向更长的思维链长度偏移；(b) 随着强化学习训练的进行以及模型在推理任务上的准确率提升，使用在LeetCode-2K数据集上通过GRPO训练的Qwen2.5-7B-Instruct进行了这项实验。</p>
+   <p>图12 (a) 一个6层GPT2模型在不同难度级别的算术任务上的表现呈倒U形曲线。随着任务难度的增加，准确率峰值逐渐向更长的思维链长度偏移；(b) 随着强化学习训练的进行以及模型在推理任务上的准确率提升，使用在LeetCode-2K数据集上通过GRPO训练的Qwen2.5-7B-Instruct进行了这项实验。</p>
 </div>
 
 
@@ -287,7 +303,7 @@ $$(Person, Relation) → Target Person$$
 
 <div align="center">
 <img width="1002" height="516" alt="11" src="https://github.com/user-attachments/assets/a3fe6fc5-1ba5-4bcc-8e8b-8e74dacedb8a" />
-   <p>图11 DTR和解决问题accuracy的关系</p>
+   <p>图13 DTR和解决问题accuracy的关系</p>
 </div>
 
 
@@ -353,7 +369,7 @@ $$(Person, Relation) → Target Person$$
 
 <div align="center">
 <img width="605" height="620" alt="12" src="https://github.com/user-attachments/assets/75f926e5-58be-4a0f-ac38-c5ab80f88eec" />
-   <p>图12 外部搜索工具+LLM</p>
+   <p>图14 外部搜索工具+LLM</p>
 </div>
 
 
@@ -407,10 +423,11 @@ $$(Person, Relation) → Target Person$$
 - [Extracting books from production language models](https://www.themoonlight.io/zh/review/extracting-books-from-production-language-models)
 - [Google团队提出的类比推理](https://arxiv.org/pdf/2310.01714)
 - [Mind Lab后训练RL微调Kimi-K2的研究](https://macaron.im/mindlab/research/building-trillion-parameter-reasoning-rl-with-10-gpus)
-- [diy-llm第可验证奖励的强化学习](https://datawhalechina.github.io/diy-llm/#/./chapter14/chapter14_%E5%8F%AF%E9%AA%8C%E8%AF%81%E5%A5%96%E5%8A%B1%E7%9A%84%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0)
+- [diy-llm第十四章可验证奖励的强化学习](https://datawhalechina.github.io/diy-llm/#/./chapter14/chapter14_%E5%8F%AF%E9%AA%8C%E8%AF%81%E5%A5%96%E5%8A%B1%E7%9A%84%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0)
 - [过犹不及_理解大语言模型中的思维链长度](https://arxiv.org/pdf/2502.07266)
 - [Google团队提出DTR指标！](https://arxiv.org/pdf/2602.13517)
 - [OpenAI提示词工程指南](https://help.openai.com/en/articles/6654000-best-practices-for-prompt-engineering-with-the-openai-api)
 - [Scaling law](https://github.com/datawhalechina/diy-llm/blob/main/docs/chapter9/chapter9_Scaling_Laws.md)
-- [Stanford答辩_持续进化AI](https://zitongyang.github.io/slides/ZitongYang_defense_slides.pdf)
+- [Stanford持续进化AI](https://zitongyang.github.io/slides/ZitongYang_defense_slides.pdf)
 - [神经细胞自动机（NCA）生成非语言合成数据，用于语言模型的预预训练](https://arxiv.org/pdf/2603.10055)
+- [序列预测器都可以作为压缩器](https://arxiv.org/pdf/2309.10668)
