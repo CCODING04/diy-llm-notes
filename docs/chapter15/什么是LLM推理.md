@@ -241,7 +241,7 @@ $$(Person, Relation) → Target Person$$
 
 <div align="center">
 <img width="1062" height="477" alt="8" src="https://github.com/user-attachments/assets/21d53bf5-07cc-46c2-be68-83ba7b647865" />
-   <p>图10 类比推理</p>
+   <p>图11 类比推理</p>
 </div>
 
 
@@ -257,8 +257,8 @@ $$(Person, Relation) → Target Person$$
 
 
 <div align="center">
-<img width="500" height="400" alt="55b4e799d76d192ec051d54481418b56" src="https://github.com/user-attachments/assets/5ef80d1a-ac58-4e01-b7d4-93bbee1ce838" />
-   <p>图11 Qwen2.5-base-7B vs Qwen2.5-RL-7B的准确率直方图</p>
+<img width="1137" height="555" alt="6c5f4cf269b2faa4a7ea5c8f2cc90156" src="https://github.com/user-attachments/assets/9a28718f-0a57-4125-bb6a-25f47f1f0536" />
+   <p>图12</p>
 </div>
 
 &emsp;&emsp;在Yue等人的研究、李飞飞团队针对Qwen系列模型的1000条高质量数据微调研究，以及DeepSeek-R1的技术报告中，研究者们得出了一个的结论：尽管经过SFT（监督微调）或RL（强化学习）等后训练过程，LLM在解决具体任务时的表现有显著提升，但这并没有为模型注入新的基础知识或提升其绝对能力上限。一种合理的解释是：对于已完成预训练的LLM而言，后训练本质上是对预训练阶段所积累潜能的“激发”与“对齐”，换言之，预训练构筑了模型能力的基石，而后训练是让这些内化的能力以更符合人类预期或逻辑规范的方式展现出来。
@@ -288,7 +288,7 @@ $$(Person, Relation) → Target Person$$
 
 <div align="center">
 <img width="1176" height="402" alt="10" src="https://github.com/user-attachments/assets/faa17b80-a23f-482c-b863-22aa0ac12549" />
-   <p>图12 (a) 一个6层GPT2模型在不同难度级别的算术任务上的表现呈倒U形曲线。随着任务难度的增加，准确率峰值逐渐向更长的思维链长度偏移；(b) 随着强化学习训练的进行以及模型在推理任务上的准确率提升，使用在LeetCode-2K数据集上通过GRPO训练的Qwen2.5-7B-Instruct进行了这项实验。</p>
+   <p>图13 (a) 一个6层GPT2模型在不同难度级别的算术任务上的表现呈倒U形曲线。随着任务难度的增加，准确率峰值逐渐向更长的思维链长度偏移；(b) 随着强化学习训练的进行以及模型在推理任务上的准确率提升，使用在LeetCode-2K数据集上通过GRPO训练的Qwen2.5-7B-Instruct进行了这项实验。</p>
 </div>
 
 
@@ -303,7 +303,7 @@ $$(Person, Relation) → Target Person$$
 
 <div align="center">
 <img width="1002" height="516" alt="11" src="https://github.com/user-attachments/assets/a3fe6fc5-1ba5-4bcc-8e8b-8e74dacedb8a" />
-   <p>图13 DTR和解决问题accuracy的关系</p>
+   <p>图14 DTR和解决问题accuracy的关系</p>
 </div>
 
 
@@ -369,7 +369,7 @@ $$(Person, Relation) → Target Person$$
 
 <div align="center">
 <img width="605" height="620" alt="12" src="https://github.com/user-attachments/assets/75f926e5-58be-4a0f-ac38-c5ab80f88eec" />
-   <p>图14 外部搜索工具+LLM</p>
+   <p>图15 外部搜索工具+LLM</p>
 </div>
 
 
@@ -407,14 +407,14 @@ $$(Person, Relation) → Target Person$$
 
 >这里有一个笔者困惑的问题，写到最后小伙伴们可以一起思考🤔🤔？
 >
->&emsp;&emsp;LLM在预训练过程中，已经形成了一套自身独有的知识压缩方式与隐含推理范式，这套范式未必与人类的思维习惯一致，但它或许是为模型自身的架构天然优化的。基于这一认知，一个值得探索的思路是：在构造合成推理数据时，是否可以不必强制对齐人类风格的思维链，而是允许模型以其"原生"的方式进行推理，随后再通过对齐阶段将最终输出转化为人类可读的形式。这一思路的本质逻辑在于——与其在推理过程的每一步都迫使模型模仿人类的线性思考方式，不如先释放其内在的推理潜力，再在输出端加一层"翻译对齐"来弥合人机表达之间的鸿沟。毕竟，强行将模型的高维推理过程约束在人类自然语言的框架中，从信息论的角度思考这个过程的本质上极有可能是用一个低维度表示去瓶颈化一个高维过程。
+>&emsp;&emsp;LLM在预训练过程中，已经形成了一套自身独有的知识压缩方式与隐含推理范式，这套范式未必与人类的思维习惯一致，但它或许是为模型自身的架构天然优化的。基于这一认知，一个值得探索的思路是：在构造合成推理数据时，是否可以不必强制对齐人类风格的思维链，而是允许模型以其"原生"的方式进行推理，随后再通过对齐阶段将最终输出转化为人类可读的形式。这一思路的本质逻辑在于——与其在推理过程的每一步都迫使模型模仿人类的线性思考方式，不如先释放其内在的推理潜力，再在输出端加一层"翻译对齐"来弥合人机表达之间的鸿沟。毕竟，强行将模型的高维推理过程约束在人类自然语言的框架中，从信息论的角度思考这个过程的本质上是用一个低维度表示去瓶颈化一个高维过程。
 
 ---
 
 # 参考资料
 
 - [Google DeepMind团队Denny Zhou的LLM推理研究探讨](https://dennyzhou.github.io/LLM-Reasoning-Stanford-CS-25.pdf)
-- [DeepSeek-R1的训练经验总结](https://arxiv.org/abs/2501.12948))
+- [DeepSeek-R1的训练经验总结](https://arxiv.org/abs/2501.12948)
 - [Does Reinforcement Learning Really Incentivize Reasoning Capacity in LLMs Beyond the Base Model?](https://arxiv.org/pdf/2504.13837)
 - [On the Interplay of Pre-Training, Mid-Training, and RL on Reasoning Language Models](https://arxiv.org/pdf/2512.07783) 
 - [CoT多路径解码方法](https://arxiv.org/pdf/2402.10200)
