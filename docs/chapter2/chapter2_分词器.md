@@ -29,42 +29,112 @@
      
 2. 对原始文本进行清洗和标准化是必须的步骤，包含去除或屏蔽无关元数据、修正或删除乱码与非法字符、统一字符编码为UTF-8，并对重复或近重复样本进行去重以减少训练偏移。
 3. 对带有敏感信息或隐私的语料要提前进行脱敏处理与合规检查，明确哪些信息不可用于训练并记录数据来源与许可。
-      处理示例基于python实现：
+
+处理示例基于python实现：
    
 ```python
-   import re
-   
-   def desensitize(text):
-       # 1.常见中文姓名（简单规则：2~3字，全中文）
-       text = re.sub(r'([\u4e00-\u9fa5]{2,3})(的)', r'[NAME]\2', text)
-   
-       # 2.手机号脱敏（11位数字）
-       text = re.sub(r'1[3-9]\d{9}', '[PHONE]', text)
-   
-       # 3.地址脱敏（如 “居住于重庆xx…地方”）
-       # 捕获（居住于、现居住于、现居于）字段后面的“重庆”“北京”“上海”“广州” 等 +任意字符
-       text = re.sub(r'(居住于|现居住于|现居于)([\u4e00-\u9fa5A-Za-z0-9]+)', r'\1[PLACE]', text)
-       return text
-   
-   # 测试
-   text="小明的联系电话是13312311111，现在居住于重庆两江新区某小区。"
-   print(f"处理前:{text}")
-   print(f"脱敏后：{desensitize(text)}")
+import re
+from typing import List, Callable
+from transformers import pipeline
+
+# 初始化NER模型（中文）
+ner_pipeline = pipeline(
+    "ner",
+    model="ckiplab/bert-base-chinese-ner",
+    grouped_entities=True
+)
+
+def ner_mask(text: str) -> str:
+    entities = ner_pipeline(text)
+    spans = []
+    for ent in entities:
+        label = ent["entity_group"]
+        start = ent["start"]
+        end = ent["end"]
+
+        if label == "PER":
+            spans.append((start, end, "[NAME]"))
+        elif label == "LOC":
+            spans.append((start, end, "[PLACE]"))
+
+    # 按长度优先
+    spans.sort(key=lambda x: (x[0], -(x[1] - x[0])))
+
+    # 去重叠
+    filtered_spans = []
+    last_end = -1
+    for start, end, tag in spans:
+        if start >= last_end:
+            filtered_spans.append((start, end, tag))
+            last_end = end
+
+    result = []
+    last_idx = 0
+    for start, end, tag in filtered_spans:
+        result.append(text[last_idx:start])
+        result.append(tag)
+        last_idx = end
+    result.append(text[last_idx:])
+    return "".join(result)
+
+class DesensitizationPipeline:
+    def __init__(self):
+        self.steps: List[Callable[[str], str]] = []
+
+    def add_step(self, func: Callable[[str], str]):
+        self.steps.append(func)
+
+    def run(self, text: str) -> str:
+        for step in self.steps:
+            text = step(text)
+        return text
+def normalize_text(text: str) -> str:
+    # 去除多余空格、统一符号（简单示例）
+    return text.strip()
+
+# 高确定性规则
+def mask_phone(text: str) -> str:
+    return re.sub(r'1[3-9]\d{9}', '[PHONE]', text)
+
+def mask_email(text: str) -> str:
+    return re.sub(r'[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}', '[EMAIL]', text)
+
+# 中确定性
+def mask_address(text: str) -> str:
+    return re.sub(
+        r'(居住于|现居住于|现居于|地址)([\u4e00-\u9fa5A-Za-z0-9]+)',
+        r'\1[PLACE]',
+        text
+    )
+
+# 低确定性
+def mask_name(text: str) -> str:
+    # 只匹配句首 or 标点后
+    return re.sub(
+        r'(?:(?<=^)|(?<=[，。！？]))([\u4e00-\u9fa5]{2,3})(的)',
+        r'[NAME]\2',
+        text
+    )
+
 ```
-   
+
+[数据脱敏处理完整可运行的代码](https://github.com/1iyouzhen/CS336-Chinese-co-construction/blob/main/docs/chapter2/%E6%95%B0%E6%8D%AE%E8%84%B1%E6%95%8F%E5%A4%84%E7%90%86%E5%AE%8C%E6%95%B4%E4%BB%A3%E7%A0%81.py)   
+
 处理前
       
->小明的联系电话是13312311111，现在居住于重庆两江新区某小区。
+>小明的邮箱是test111@gmail.com，电话是13312311111，现在居住于重庆两江新区的xxx小区。
          
 脱敏后
       
->[NAME]的联系电话是[PHONE]，现居住于[PLACE]。
+>[NAME]的邮箱是[EMAIL]，电话是[PHONE]，现在居住于[PLACE]。
    
-如果句子中出现姓名、电话号码、住址等特定信息进行脱敏处理。值得注意的是这样数据脱敏不仅是保护隐私与合规的需要，同时也能让tokenizer的统计过程更干净、更稳定。大量独特且高基数的信息如*姓名、电话号码、身份证号等*如果不处理，会在语料中以几乎不重复的形式出现，使分词器在训练时被这些“只出现一次的随机字符串”干扰，从而产生大量低价值的token片段，通过脱敏替换这类信息后模型能够更专注于学习真正高频、有规律的语言结构，使词表更加精简分词效果更一致，泛化能力也更强。
+如果句子中出现姓名、电话号码、住址等敏感信息，需要进行脱敏处理。**通常在数据处理流程中，会优先处理高确定性的信息（例如电话号码、邮箱等）以排除干扰，随后再处理姓名等非标准信息，从而降低因表达不规范或格式多样而导致的总体漏检风险**。值得注意的是，数据脱敏不仅是出于隐私保护与合规要求，同时也有助于提升下游文本建模与分词过程的稳定性。像姓名、电话号码、身份证号等高基数的信息，如果直接保留在语料中，往往会以近似唯一的形式出现。这类信息在统计上属于低频甚至单次出现的噪声，会干扰分词算法（如BPE、Unigram）在学习高频token结构时的统计效率。
 
-如果下游任务本身需要识别真实实体（如信息抽取等），过度脱敏会削弱训练信号。因此需要在**保护隐私**与**保留关键语义信息**之间进行合理的策略选择与权衡。
+>这类信息进行统一替换（如映射为[NAME]、[PHONE]等占位符），可以有效降低语料中无效的多样性，使分词器更专注于建模具有统计规律的语言模式，从而提升词表的利用效率、一致性。*从信息论的角度来看，数据脱敏可以视为一种结构化的去噪过程——通过压缩或消除高熵但低语义价值的信号（如具体身份信息），提高语料中有效信号的占比，可以协助LLM在后面的训练过程更倾向于学习可复用的语义结构，而非记忆偶然出现的实例细节。*
+
+而下游任务本身需要识别真实实体（如信息抽取等），过度脱敏会削弱训练信号。因此需要在**保护隐私**与**保留关键语义信息**之间进行合理的策略选择与权衡。
    
->token是LLM的基本输入单位，由分词器根据统计规则把文本拆成的子词、字符或字节，再映射成数字ID。
+*token是LLM的基本输入单位，由分词器根据统计规则把文本拆成的子词、字符或字节，再映射成数字ID。*
 
 4. 在多语言或混合语料场景中，应当统计每种语言的占比并考虑是否对低资源语言做过采样或专门保留，以避免词表被高频语言主导导致低频语言表现差即语料类型、语言不平衡会导致**token碎片化**、**占用更多token**并降低资源语言性能。
    
@@ -95,78 +165,85 @@
    import re
          
    def part(text):
-   # 将标点符号单独拆开，并按照空格进行分割
-   text = re.sub(r'([.,!?;:()"\'\[\]{}])', r' \1 ', text)
-   tokens = text.split()
-   return tokens
-         
-   # 测试
-   s = "I like DataWhale."
+      # 将标点符号单独拆开，并按照空格进行分割
+      text = re.sub(r'([.,!?;:()"\'\[\]{}])', r' \1 ', text)
+      tokens = text.split()
+      return tokens
+
+# 测试
+if __name__ == "__main__":         
+   s = "I like Datawhale."
    print(part(s))
    
 ```
    
 输入
->I like DataWhale.
+>I like Datawhale.
          
 输出token划分
->['I', 'like', 'DataWhale', '.']
+>['I', 'like', 'Datawhale', '.']
 
    - Unicode类别划分策略：根据字符类型比如字母、数字、标点、中文、特殊字符等自动切分token，不同Unicode类别会属于不同token块，这种方法天然适用于多种语言混合的文本，提供了可靠的基线切分。
         
 ```python
-      # Unicode类别划分token
-      import unicodedata
-      def unicode_category_type(ch):
-          """根据Unicode类别将字符划为：中文、字母、数字、其他"""
-          if '\u4e00' <= ch <= '\u9fff':
-              return "CJK"
-          if ch.isdigit():
-              return "DIGIT"
-          if ch.isalpha():
-              return "ALPHA"
-          return "OTHER"
-      
-      def tokenize_unicode_category(text):
-          if not text:
-              return []
-      
-          tokens = []
-          current = text[0]
-          current_type = unicode_category_type(current)
-      
-          for ch in text[1:]:
-              ch_type = unicode_category_type(ch)
-              if ch_type == current_type and ch_type != "OTHER":
-                  # 同类字符，继续合并
-                  current += ch
-              else:
-                  # Unicode不同类 → 切分
-                  tokens.append(current)
-                  current = ch
-                  current_type = ch_type
-          tokens.append(current)
-      
-          # 最后再把"OTHER"类型（标点等）拆开
-          final_tokens = []
-          for t in tokens:
-              if unicode_category_type(t[0]) == "OTHER":
-                  final_tokens.extend(list(t))
-              else:
-                  final_tokens.append(t)
-          return final_tokens
-      
-      # 测试
-      s = "Hello，DataWhale成立于2018年12月6日！至今已有7年的历史了~"
-      print(tokenize_unicode_category(s))
+import unicodedata
+
+def get_char_category(ch: str) -> str:
+    cat = unicodedata.category(ch)
+
+    if '\u4e00' <= ch <= '\u9fff':
+        return "CJK"
+    if ch.isdigit():
+        return "DIGIT"
+    if ch.isalpha():
+        return "ALPHA"
+
+    if cat.startswith("P"):  # 标点
+        return "PUNCT"
+
+    return "OTHER"
+
+
+def segment_by_unicode_category(text: str):
+    """基于Unicode类别分段，并支持连续标点合并"""
+
+    if not text:
+        return []
+
+    segments = []
+    buffer = [text[0]]
+    prev_type = get_char_category(text[0])
+
+    # 第一阶段：按类别切分（允许OTHER连续合并）
+    for ch in text[1:]:
+        curr_type = get_char_category(ch)
+
+        if curr_type == prev_type:
+            buffer.append(ch)
+        else:
+            segments.append(("".join(buffer), prev_type))
+            buffer = [ch]
+            prev_type = curr_type
+
+    segments.append(("".join(buffer), prev_type))
+
+    # 第二阶段：直接输出（不再拆OTHER）
+    tokens = [seg for seg, _ in segments]
+
+    return tokens
+
+
+if __name__ == "__main__":
+    s = "Hello👋👋，Datawhale成立于2018年！！！"
+    print(segment_by_unicode_category(s))
 
 ```
      
 输入
->Hello，DataWhale成立于2018年12月6日！至今已有7年的历史了~
+>Hello👋👋，Datawhale成立于2018年！！！
 
 输出
->['Hello', '，', 'DataWhale', '成立于', '2018', '年', '12', '月', '6', '日', '！', '至今已有', '7', '年的历史了', '~']
+>['Hello', '👋👋', '，', 'Datawhale', '成立于', '2018', '年', '！！！']
 
    - 字节级切分策略：先将每个字符拆成[UTF-8字节序列](https://datatracker.ietf.org/doc/html/rfc3629)，不依赖语言种类、字符，按照单个字节序列得到一个独立的token。
 
@@ -185,8 +262,9 @@
               # 加入token列表
               tokens.extend(hex_bytes)
           return tokens
-      
+
       # 测试
+   if __name__ == "__main__":
       s = "All for learners！"
       print(tokenize_byte_level(s))
 
@@ -252,12 +330,20 @@
        return tokens, t
    
    # 测试
-   text = "Hi，你好🐋"
-   tokens, t = btp_hex_list(text)
-   for i in tokens:
-       print(i)
-   print(t)
+   if __name__ == "__main__":
+      text = "Hi，你好🐋"
+      tokens, t = btp_hex_list(text)
+      for i in tokens:
+          print(i)
+      print(t)
    ```
+
+   输入
+   >"Hi，你好🐋"
+
+   输出字节编码结果
+   >['48', '69', 'EF', 'BC', '8C', 'E4', 'BD', 'A0', 'E5', 'A5', 'BD', 'F0', '9F', '90', '8B']
+   
 
 ### 2.1.3 统计并迭代更新 
 
@@ -298,7 +384,7 @@ $$
 
       ③在每次迭代中，模型会剪枝（淘汰）概率较低的token如丢弃底部10%~20%，从而逐步收敛到一个较小且优化后的词表，直到达到预设的目标词表大小。这种方法相比BPE或WordPiece更依赖概率建模，能够灵活处理不同长度的子词，并自然保留最能解释语料的高频段。
 
-`最大化语料似然`指的是在训练分词器时，学习一套能让训练语料整体概率最大的`token`划分方式和词表，使语料中的字符序列可以被更高概率、更常见的token组合表示。通俗地说就是把文本切成最顺畅、最符合语言统计规律的片段，让同一句话在不同地方都能被稳定、紧凑地切分成一致的token序列。需要注意的是：分词器优化的是输入的表示方式，它本身并不会让模型“理解”自然语言——真正“理解”语言的能力是在后续`Transformer`参与的训练中获得的。但更合理的token划分会让输入分布更清晰一致，从而间接提升模型训练效率和最终性能。
+`最大化语料似然`指的是在训练分词器时，学习一套能让训练语料整体概率最大的`token`划分方式和词表，使语料中的字符序列可以被更高概率、更常见的token组合表示。通俗地说就是把文本切成最顺畅、最符合语言统计规律的片段，让同一句话在不同地方都能被稳定、紧凑地切分成一致的token序列。需要注意的是：分词器优化的是输入的表示方式，它本身并不会让模型“理解”自然语言——真正“理解”语言的能力是在后续`Transformer`参与的训练中获得的，但更合理的token划分会让输入分布更清晰一致从而间接提升模型训练效率和最终性能。
 
    - SentencePiece算法：它是一个独立的分词工具和实现库，能够直接从原始文本训练子词模型，因此无需用户在外部显式执行预分词步骤。它在内部会将空格、词边界等信息编码为特殊字符（训练输出中常见的`▁`用于表示词首空格），从而可以将空格也作为建表对象之一，接着会在这些初始token上应用BPE或Unigram算法，生成最终的token词表及映射。
 
@@ -1099,9 +1185,10 @@ if __name__ == "__main__":
 输入测试样例
 >注意力机制是AI的核心技术。 🚀 🚀
 
->输出分析： 本流程依据预设的分词算法将文本离散化为最小语义单元（token），并构建其与全局唯一数值ID及底层编码的确定性映射。相同字符（如空格、特定Emoji🚀）在文中均指向一致的ID与编码序列，确保了特征表征的稳定性。
+输出分析
+>本流程依据预设的分词算法将文本离散化为最小语义单元（token），并构建其与全局唯一数值ID及底层编码的确定性映射。相同字符（如空格、特定Emoji🚀）在文中均指向一致的ID与编码序列，确保了特征表征的稳定性。
 
-从以上代码的运行结果可以看到，分词器中的`token ↔ id`映射只描述“这个token的内容”，并不包含它在句子中的任何位置信息。BPE或其他基于统计和概率的分词算法，其本质都是依据语料中的共现频率或概率分布，决定如何将常见的字符、字节或子串合并成更长、更高频的token。这类算法本身并不理解句子的语义，它更像一个纯统计模块，通过频率或概率原则对字符序列进行切分与合并，为上层模型*如LLM*提供稳定而紧凑的离散输入单元。真正的语义理解由下游的`Transformer`板块在上下文中通过学习获得，并依赖位置编码来建模顺序信息，而不是由`分词器`完成。
+从以上代码的运行结果可以看到，分词器中的`token ↔ id`映射只描述“这个token的内容”，并不包含它在句子中的任何位置信息。BPE或其他基于统计和概率的分词算法，其本质都是依据语料中的共现频率或概率分布，决定如何将常见的字符、字节或子串合并成更长、更高频的token。这类算法本身并不理解句子的语义，它更像一个纯统计模块，通过频率或概率原则对字符序列进行切分与合并，为模型*LLM*提供稳定而紧凑的离散输入单元。
 
 >为什么DeepSeek要用latin1编解码?
 >
