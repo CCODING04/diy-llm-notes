@@ -713,24 +713,33 @@ loss = h2.pow(2).mean()  # 计算损失（均方误差）
 - w1.grad = d(loss) / d(w1) （第一层权重的梯度）
 - w2.grad = d(loss) / d(w2) （第二层权重的梯度）
 
-让我们重点分析 w2.grad 的计算，根据链式法则：
-```
-w2.grad[j,k] = sum_i h1[i,j] * h2.grad[i,k]
-```
-这本质上是一个矩阵乘法，h1 的形状是 (B, D)，h2.grad 的形状是 (B, K)，它们的乘积 h1.T @ h2.grad 的形状是 (D, K)，正好是 w2.grad 的形状。因此，计算 w2.grad 的 FLOPs 为：**2 * B * D * K**
+让我们重点分析 w2.grad 的计算，根据链式法则（$h_2 = h_1 W_2$，故 $\frac{\partial L}{\partial W_2} = h_1^{\mathsf{T}}\frac{\partial L}{\partial h_2}$）：
 
-为了继续反向传播到 w1，我们还需要计算 h1.grad。根据链式法则：
-```
-h1.grad[i, j] = sum_k w2[j, k] * h2.grad[i, k]
-```
+$$
+\frac{\partial L}{\partial W_{2}[j,k]} = \sum_{i} h_{1}[i,j]\,\frac{\partial L}{\partial h_{2}[i,k]}
+$$
 
-这同样是一个矩阵乘法，w2 的形状是 (D, K)，h2.grad 的形状是 (B, K)。它们的乘积 h2.grad @ w2.T 的形状是 (B, D)，正好是 h1.grad 的形状。因此，计算 h1.grad 的 FLOPs 也是：**2 * B * D * K**
+其中 $i$ 为 batch 维下标（与上文 $h_1$ 的行对应）。与 PyTorch 一致地记 $\texttt{h2.grad}[i,k]=\partial L/\partial h_{2}[i,k]$，即 $\texttt{w2.grad}[j,k]=\sum_i \texttt{h1}[i,j]\cdot\texttt{h2.grad}[i,k]$，等价于矩阵形式 $\texttt{w2.grad} = \texttt{h1}^{\mathsf{T}} @ \texttt{h2.grad}$。
 
-同理，计算 w1.grad 的公式是：
-```
-w1.grad[j, k] = sum_i x[i, j] * h1.grad[i, k]
-```
-这又是一个矩阵乘法，其 FLOPs 为：**2 * B * D * D**
+这本质上是一个矩阵乘法：$\texttt{h1}$ 的形状是 $(B, D)$，$\texttt{h2.grad}$ 的形状是 $(B, K)$，$\texttt{h1}^{\mathsf{T}} @ \texttt{h2.grad}$ 的形状是 $(D, K)$，正好是 $\texttt{w2.grad}$ 的形状。因此，计算 $\texttt{w2.grad}$ 的 FLOPs 为：**2 × B × D × K**
+
+为了将梯度继续传回第一层（随后才能算 $\texttt{w1.grad}$），需要先求 $\partial L/\partial h_1$。由 $h_2 = h_1 W_2$ 对 $h_1$ 求导得 $\frac{\partial L}{\partial h_1} = \frac{\partial L}{\partial h_2} W_2^{\mathsf{T}}$：
+
+$$
+\frac{\partial L}{\partial h_{1}[i,j]} = \sum_{k} \frac{\partial L}{\partial h_{2}[i,k]}\, W_{2}[j,k]
+$$
+
+其中 $k$ 为输出维下标。记 PyTorch 的 $\texttt{h1.grad}$、$\texttt{h2.grad}$ 即上式左、右端的 $\partial L/\partial h_1$、$\partial L/\partial h_2$，则元素形式为 $\texttt{h1.grad}[i,j]=\sum_k \texttt{h2.grad}[i,k]\cdot\texttt{w2}[j,k]$，矩阵形式为 $\texttt{h1.grad} = \texttt{h2.grad} @ \texttt{w2}^{\mathsf{T}}$。
+
+$\texttt{w2}$ 的形状是 $(D, K)$，$\texttt{h2.grad}$ 的形状是 $(B, K)$，故 $\texttt{h2.grad} @ \texttt{w2}^{\mathsf{T}}$ 为 $(B, D)$，与 $\texttt{h1.grad}$ 一致。计算 $\texttt{h1.grad}$ 的 FLOPs 也是：**2 × B × D × K**。
+
+同理，第一层 $h_1 = x\, W_1$ 对 $W_1$ 的梯度为 $\frac{\partial L}{\partial W_1} = x^{\mathsf{T}}\frac{\partial L}{\partial h_1}$：
+
+$$
+\frac{\partial L}{\partial W_{1}[j,k]} = \sum_{i} x[i,j]\,\frac{\partial L}{\partial h_{1}[i,k]}
+$$
+
+即 $\texttt{w1.grad}[j,k]=\sum_i x[i,j]\cdot\texttt{h1.grad}[i,k]$，矩阵形式 $\texttt{w1.grad} = x^{\mathsf{T}} @ \texttt{h1.grad}$。其 FLOPs 为：**2 × B × D × D**。
 
 将这个过程[可视化](https://medium.com/@dzmitrybahdanau/the-flops-calculus-of-language-model-training-3b19c1f025e4)：
 
