@@ -129,7 +129,7 @@ if __name__ == "__main__":
     你好 世界 你好 世界
     """
 
-    bpe_tokenizer = BPETokenizer(num_merges=10)
+    bpe_tokenizer = BPETokenizer(num_merges=20)
     bpe_tokenizer.train(train_text)
 
     bpe_tokens = bpe_tokenizer.encode(text)
