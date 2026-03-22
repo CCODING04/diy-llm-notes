@@ -721,7 +721,7 @@ $$
 
 其中 $i$ 为 batch 维下标（与上文 $h_1$ 的行对应）。与 PyTorch 一致地记 ${h2.grad}[i,k]=\partial L/\partial h_{2}[i,k]$ ，即 ${w2.grad}[j,k]=\sum_i {h1}[i,j]\cdot{h2.grad}[i,k]$ ，等价于矩阵形式 ${w2.grad} = {h1}^{\mathsf{T}} @ {h2.grad}$ 。
 
-这本质上是一个矩阵乘法：$h_{1}$ 的形状是 $(B, D)$，$h_{2}.grad$ 的形状是 $(B, K)$，$h_{1}^{\mathsf{T}} @ {h_{2}.grad}$ 的形状是 $(D, K)$，正好是 ${w2.grad}$ 的形状。因此，计算 ${w2.grad}$ 的 FLOPs 为：**2 × B × D × K**
+这本质上是一个矩阵乘法：$h_{1}$ 的形状是 $(B, D)$，$h_{2}.grad$ 的形状是 $(B, K)$，$h_{1}^{T} @ {h_{2}.grad}$ 的形状是 $(D, K)$，正好是 ${w2.grad}$ 的形状。因此，计算 ${w2.grad}$ 的 FLOPs 为：**2 × B × D × K**
 
 为了将梯度继续传回第一层（随后才能算 ${w1.grad}$），需要先求 $\partial L/\partial h_1$。由 $h_2 = h_1 W_2$ 对 $h_1$ 求导得 $\frac{\partial L}{\partial h_1} = \frac{\partial L}{\partial h_2} W_2^{\mathsf{T}}$：
 
@@ -739,7 +739,7 @@ $$
 \frac{\partial L}{\partial W_{1}[j,k]} = \sum_{i} x[i,j]\,\frac{\partial L}{\partial h_{1}[i,k]}
 $$
 
-即 ${w1.grad}[j,k]=\sum_i x[i,j]\cdot{h1.grad}[i,k]$，矩阵形式 ${w1.grad} = x^{\mathsf{T}} @ {h1.grad}$。其 FLOPs 为：**2 × B × D × D**。
+即 ${w1.grad}[j,k]=\sum_i x[i,j]\cdot{h1.grad}[i,k]$，矩阵形式 ${w1.grad} = x^{T} @ {h1.grad}$。其 FLOPs 为：**2 × B × D × D**。
 
 将这个过程[可视化](https://medium.com/@dzmitrybahdanau/the-flops-calculus-of-language-model-training-3b19c1f025e4)：
 
@@ -782,7 +782,7 @@ output = x @ w # 输出向量
 ```
 当 input_dim = 16384 时，输出值的大小约为 18.9，这是一个非常大的数值。这种大数值会逐层放大，导致梯度爆炸（gradient explosion），使训练过程变得极不稳定，甚至无法收敛。
 
-为了克服这个问题，我们需要一种对输入维度 input_dim 不敏感的初始化方法。解决方法是使用 **Xavier初始化**([paper](https://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf))。通过除以 $\sqrt{\text{输入维度}}$ 来缩放权重，保持数值稳定性。
+为了克服这个问题，我们需要一种对输入维度 input_dim 不敏感的初始化方法。解决方法是使用 **Xavier初始化**([paper](https://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf) [stackexchange社区](https://ai.stackexchange.com/questions/30491/is-there-a-proper-initialization-technique-for-the-weight-matrices-in-multi-head))。通过除以 $\sqrt{\text{输入维度}}$ 来缩放权重，保持数值稳定性。
 
 ```python
 w = nn.Parameter(torch.randn(input_dim, output_dim) / np.sqrt(input_dim))
