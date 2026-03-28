@@ -533,7 +533,7 @@ ARC-AGI-1:
 
 <div align="center">
    <img src="https://raw.githubusercontent.com/datawhalechina/diy-llm/main/docs/chapter12/images/12-36-HELM上LLM在HarmBench基准上的排行.png" />
-   <p>图12.36 HELM上LLM在HarmBench 基准上的排行.png</p>
+   <p>图12.36 HELM上LLM在HarmBench 基准上的排行</p>
 </div>
 
 ### AIR-Bench

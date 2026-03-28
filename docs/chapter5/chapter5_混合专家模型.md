@@ -1,4 +1,4 @@
-# 第五章 专家混合模型
+# 第五章 混合专家模型
 专家混合模型（MoE）是当前LLM领域中一项至关重要的技术，它有效地解决了模型规模与计算成本之间的矛盾。这种机制允许模型在不显著增加训练和推理计算量的前提下，大幅扩展其总参数规模和表达能力，从而实现了模型容量（参数数量）与计算效率之间的动态平衡。正是凭借MoE这一机制，Switch Transformer、DeepSeek等模型得以问世并展现出卓越性能。然而，MoE在实际应用中会有负载均衡、跨设备并行、训练不稳定和路由机制设计等工程挑战。接下来，我们将剖析MoE的核心概念、工作原理以及实际应用，并提供解决这些工程挑战的实用思路，旨在以更高的计算效率，正确应用这一机制来扩展LLM的能力。
 
 ## 5.1 分析MoE
@@ -268,7 +268,9 @@ $$
 
 这里的 $D$ 是复合哈希函数即随机投影方向的数量。这种方法不通过梯度优化哈希参数，但路由结果会因随训练演化的 $x$ （Token Embedding）而动态改变，LSH**概率性地**实现了负载均衡，并且由于其局部敏感性，能够保留弱局部性——即相似Token更可能落入同一哈希桶。因此，LSH算是一种“弱语义”非学习路由。
 
-*`桶宽度`是指一个哈希桶所在特征投影平面中占据的物理宽度。*
+*`桶宽度` $\epsilon$ 与上式中的量化步长对应，用于把连续投影值分桶；桶越宽，同一桶内聚集的向量越多。*
+
+> **说明：** 上文带 $\epsilon$ 的公式刻画的是**随机投影 + 标量量化**一类 LSH；下文示例代码则采用**随机超平面符号哈希**（对投影结果取正负号再编码为比特串），二者同属 LSH 家族但实现细节不同，阅读时请勿把公式参数与代码逐行一一对应。
 
 **基于LSH路由机制的简易MoE实现**：
 ```python
@@ -321,7 +323,7 @@ class LSHRouter(nn.Module):
 class LSH_MoE_Text(nn.Module):
     def __init__(self, dim, num_experts, n_hashes=8, vocab_size=None):
         super().__init__()
-        self.embedding = nn.Embedding(vocab_size, dim)  # embdding层
+        self.embedding = nn.Embedding(vocab_size, dim)  # embedding 层
         self.dim = dim
         self.num_experts = num_experts
         self.router = LSHRouter(dim, num_experts, n_hashes)
@@ -374,7 +376,7 @@ if __name__ == "__main__":
     tokenizer = CharTokenizer()
     tokenizer.build_vocab(sentences)
     token_lists = [torch.tensor(tokenizer.encode(s), dtype=torch.long) for s in sentences]
-    dim, num_experts = 16, 5    # 每个token embdding维度，专家数量
+    dim, num_experts = 16, 5    # 每个 token 的 embedding 维度，专家数量
     moe_text = LSH_MoE_Text(dim=dim, num_experts=num_experts, vocab_size=len(tokenizer.vocab))
     outputs = moe_text(token_lists)
     for i, out in enumerate(outputs):
@@ -387,7 +389,7 @@ if __name__ == "__main__":
 输出
 >每个句子的token哈希映射以及LSH_MoE专家负载统计。
 
-*输出结果会随着embdding层动态变化。*
+*输出结果会随着 embedding 层动态变化。*
 
 **MoE路由机制对比**
 
@@ -402,7 +404,7 @@ if __name__ == "__main__":
 2. **知识重复**：不同专家处理的token可能存在重叠的知识需求。结果就像几位老师都在准备相同的教材，每个人都在重复劳动，无法凸显各自的“专业特长”，也导致专家之间缺乏明确的“专业分工”。
 
 这两个问题叠加起来，可能会限制MoE模型发挥其理论上最大的能力，让专家难以真正做到“各司其职”，理解这些限制，可以启发我们设计更智能的路由策略，让每位专家专注于自己的“领域”，从而提升模型整体表现。在接下来的内容中，我们将介绍两种MoE变体，这些方法正是为了解决知识杂乱和重复问题而提出的。
-1. DeepSpeed-MoE的贡献MoE训练成本，从模型结构、训练系统到推理加速的全栈设计，使得稀疏专家模型比同质量的稠密模型在训练成本、部署效率和实时性上都更具优势，从而让超大规模LLM向更高效、更可落地的方向发展。
+1. DeepSpeed-MoE 在降低 MoE 训练成本方面的贡献涵盖从模型结构、训练系统到推理加速的全栈设计，使得稀疏专家模型比同质量的稠密模型在训练成本、部署效率和实时性上都更具优势，从而让超大规模 LLM 向更高效、更可落地的方向发展。
    
    - **参数效率提升：** DeepSpeed-MoE在模型结构上提出了PR-MoE以及其蒸馏压缩版本MoS，PR-MoE用固定MLP+“专家残差纠错”减少参数与通信，再用“金字塔式专家数量”把专家集中在深层，从而达到更高的参数效率；MoS则通过分阶段蒸馏进一步压缩模型，让MoE在保持性能的同时显著加速推理。
    - **蒸馏压缩加速推理：** Mos通过“分阶段知识蒸馏”将PR-MoE进一步压缩，用较浅的稀疏学生模型替代原模型以提升推理速度。由于直接减少层数会导致模型能力下降，而从头到尾都用教师信号训练也会导致学生欠拟合，MoS采用“两阶段”方式：训练前期使用蒸馏稳定学习教师分布，后期关闭蒸馏、只优化语言模型损失，让学生模型具备自主泛化能力。实践中，MoS可以将模型尺寸再缩小3.7倍，同时推理速度比质量相当的稠密模型还要更快。
@@ -451,7 +453,7 @@ MoE相较于传统稠密模型的优势是它可以**扩大模型参数规模的
    <img width="1000" height="560" alt="a3148e314b83a88516b3c82b67d4224d" src="https://github.com/user-attachments/assets/b9945e0c-9a88-4127-a267-2f1c0b62d132" />
    <p>图5.7 混合专家 vs 稠密模型</p>
  </div>
-从上图中我们不难发现MoE的架构比稠密模型的架构收敛数度更快且表现得更好。
+从上图中我们不难发现，在所示实验设置下 MoE 架构往往比稠密模型收敛更快且表现更好（具体结论依赖数据规模、训练配方与评测任务）。
 
 在MoE研究中，常见两条实践路径：
 
@@ -626,7 +628,7 @@ class MoELayer(nn.Module):
             logits = logits + torch.randn_like(logits) * noise_std
         return logits
 
-def forward(self, x, mask=None):
+    def forward(self, x, mask=None):
         B, T, D = x.shape
         N = B * T
         x_flat = x.view(N, D)  # [B, T, D] -> [N, D]
@@ -708,8 +710,8 @@ def forward(self, x, mask=None):
    - 原理：为每个专家设置一个最大容量 $C_{expert} = \lceil (\frac{N}{E}) \times capacity_{factor} \rceil$ 。如果路由到某个专家的token数量超过 $C_{expert}$，则*丢弃*超出的token。
    - 作用：强制所有专家只能处理有限数量的token，从而避免少数专家被过度占用token资源，并确保整个MoE层的计算时间可预测且稳定。但是被丢弃的token缺失了部分输入的语义信息，如果它未经过任何专家处理，这会给模型的收敛速度和最终准确率带来负面影响。
 
-**第四步：构建完整的Transfomer板块**
-支持在传统FFN和MoE之间切换，一个Transformer Block含有两个子层依次为：自注意力层、FNN或MoE，结构可以参考图Switch Transformer。
+**第四步：构建完整的 Transformer 板块**
+支持在传统 FFN 和 MoE 之间切换，一个 Transformer Block 含有两个子层依次为：自注意力层、FFN 或 MoE，结构可以参考图 Switch Transformer。
 ```python
 class TransformerBlock(nn.Module):
     def __init__(self, d_model, nhead, d_ff, use_moe=False, moe_params=None, dropout=0.1):
