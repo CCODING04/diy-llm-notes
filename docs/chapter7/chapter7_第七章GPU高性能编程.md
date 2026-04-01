@@ -799,11 +799,11 @@ def pytorch_compilation():
 
 <img src="https://raw.githubusercontent.com/datawhalechina/diy-llm/main/docs/chapter7/images/7-22-compil的gelu的性能分析.png" width="800" alt="7-22-compil的gelu的性能分析">
 
-关键结论是：现代JIT编译器非常强大，能在无需人工干预的情况下实现操作融合等优化。比我们做的稍更优化。因此它的性能甚至比我们的代码还要稍好一些。所以`torch.compile`确实十分优秀。
+现代JIT编译器非常强大，能在无需人工干预的情况下实现操作融合等优化。比我们做的稍更优化。因此它的性能甚至比我们的代码还要稍好一些。所以`torch.compile`确实十分优秀。
 
 至于什么时候用`torch.compile`是一个关键问题，对于简单操作比如基础的算子融合和阵乘法优化，`torch.compile`如果知道矩阵形状就能分配合适的内核，这些方面它已经非常出色，人工很难在这方面做得更好了。
 
 但像FlashAttention1、2、3这类优化就相当复杂。如今 `torch.compile` 和Jax的XLA编译器确实能实现这些，但这是因为我们事后才明白这些是正确的优化方向。而且有些优化策略并不容易发现，**比如FlashAttention3利用了H100硬件的底层优化，这对JIT编译器来说并不直观，这些就是torch.compile难以处理，但人工可以优化的场景**。
 
-不过核心观点是：**不用想着为每个模块都手写CUDA内核，因为这很可能是在浪费时间。但如果在开发新架构时遇到复杂模块，GPU利用率不理想却认为有优化空间，这时候就值得使用Triton了**。
+不过核心观点是我们**不用想着为每个模块都手写CUDA内核，因为这很可能是在浪费时间。但如果在开发新架构时遇到复杂模块，GPU利用率不理想却认为有优化空间，这时候就值得使用Triton了**。
 
