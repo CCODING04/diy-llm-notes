@@ -155,7 +155,7 @@ CS336-Chinese-co-construction/
     <tr align="center" >
       <td>
          <a href="https://github.com/xuhu0115"><img width="70" height="70" src="https://github.com/xuhu0115.png?s=40" alt="pic"></a><br>
-         <a href="https://github.com/qiwang067">徐虎</a> 
+         <a href="https://github.com/xuhu0115">徐虎</a> 
         <p>项目负责人<br> Datawhale 成员<br> 上海交通大学 <br> 负责内容：第1、3、9、12、14章；作业5、6；全文内容审核</p>
       </td>
       <td>
