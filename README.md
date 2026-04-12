@@ -83,7 +83,7 @@
 ```bash
 # 克隆仓库
 git clone https://github.com/datawhalechina/diy-llm.git
-cd CS336-Chinese-co-construction
+cd diy-llm
 # 安装基础依赖（根据具体作业需求安装）
 ```
 
