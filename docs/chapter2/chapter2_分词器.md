@@ -3,7 +3,7 @@
 分词器常被视为LLM的一部分，但它其实有独立的训练生命周期。通常先用正则表达式对原始文本做预处理，再通过统计方法构建高效`词表（vocab）`，并建立“文本片段 ↔ token ID”的映射。这个映射决定了模型看到的是字、词，还是更细的子词片段，从而直接影响后续语义建模的效率。
 
 <div align="center">
-   <img width="800" height="500" alt="1" src="https://github.com/user-attachments/assets/bc838c76-7eff-4479-a760-ef404fc48e89" />
+   <img width="800" height="500" alt="1" src="images/图2.1.png" />
    <p>图2.1 分词器与LLM</p>
  </div>
  
@@ -16,7 +16,7 @@
 
 <div align="center">
    
-![1](https://github.com/user-attachments/assets/14b349a5-167d-4f66-825b-2951e87d0dc6)
+![1](images/图2.2.jpg)
 
    <p>图2.2 分词器训练流程</p>
  </div>
@@ -327,7 +327,7 @@ if __name__ == "__main__":
 
 
 <div align="center">
-<img width="1236" height="612" alt="da455deb32b22e4285d51b04dfb9a063" src="https://github.com/user-attachments/assets/97e514fd-5def-405d-95c2-9a9208d6f067" />
+<img width="1236" height="612" alt="da455deb32b22e4285d51b04dfb9a063" src="images/图2.3.png" />
    <p>图2.3 token序列长度对注意力机制的影响</p>
  </div>
  
@@ -469,7 +469,7 @@ $$
    训练完成后需要导出至少两个关键文件：
    
 <div align="center">
-   <img width="1320" height="780" alt="0fb498f1c19fdae425eb17ad4270c45e" src="https://github.com/user-attachments/assets/1ea639e8-81f9-49a5-b5d7-3df32fe129a2" />
+   <img width="1320" height="780" alt="0fb498f1c19fdae425eb17ad4270c45e" src="images/图2.4.png" />
    <p>图2.4 vocab、merges文件示例</p>
    </div>
    
@@ -1280,7 +1280,7 @@ if __name__ == "__main__":
 ### 2.3.3 快速体验DeepSeek分词器
 
 <div align="center">
-   <img width="1788" height="1077" alt="fdfd8c74f27d0832c80a9d4587daeb16" src="https://github.com/user-attachments/assets/7e7b40df-e9c0-43ed-896a-40679a8046c8" />
+   <img width="1788" height="1077" alt="fdfd8c74f27d0832c80a9d4587daeb16" src="images/图2.5.png" />
    <p>图2.5 DeepSeek分词器</p>
    </div>
    

@@ -144,6 +144,13 @@ celerybeat.pid
 
 # Environments
 coursework/assignment5-alignment/.venv
+.venv/
+
+# uv
+uv.lock
+
+# Claude Code
+.claude/
 
 
 

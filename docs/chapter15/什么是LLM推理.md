@@ -13,7 +13,7 @@
 
 
 <div align="center">
-   <img width="1466" height="700" alt="1" src="https://github.com/user-attachments/assets/d040c7d0-020b-4fba-b577-3efc0d9a181b" />
+   <img width="1466" height="700" alt="1" src="images/1.png" />
    <p>图1 调用大模型的API实现</p>
  </div>
 
@@ -36,7 +36,7 @@
 &emsp;&emsp;我们或许会对预训练完成的LLM普遍持有这样一种看法：如果不经过进一步的提示工程或微调，模型在回答问题时往往直接给出最终答案而不展示中间推理过程，由此认为其不具备推理能力。
 
 <div align="center">
-<img width="951" height="522" alt="2" src="https://github.com/user-attachments/assets/dce337b4-5afb-49ea-90b3-669ced8d3d68" />
+<img width="951" height="522" alt="2" src="images/2.png" />
    <p>图2 无推理与推理的对比</p>
  </div>
 
@@ -48,7 +48,7 @@
 
 
 <div align="center">
-<img width="1131" height="311" alt="3" src="https://github.com/user-attachments/assets/ae2022a0-c75a-4ae2-bc81-9b436618bece" />
+<img width="1131" height="311" alt="3" src="images/3.png" />
    <p>图3 预训练模型的CoT解码示意图。预训练大语言模型无需提示即可进行内在推理，其方式是考虑备选的前k个解码路径，而非仅依赖前1个贪心解码路径</p>
 </div>
 
@@ -123,7 +123,7 @@ $$P(A \to C) = 0.6 \times 0.6 = \mathbf{0.360}$$
 
 
 <div align="center">
-  <img width="1143" height="312" alt="4" src="https://github.com/user-attachments/assets/c08900e0-9642-4e33-8b57-44fb2559f07d" />
+  <img width="1143" height="312" alt="4" src="images/4.png" />
    <p>图4 预训练PaLM-2 Large模型上的第一个解码步骤示例，模型对答案（加粗显示）的置信度以蓝色突出显示</p>
 </div>
 
@@ -132,7 +132,7 @@ $$P(A \to C) = 0.6 \times 0.6 = \mathbf{0.360}$$
 在图4中，LLM第一个解码步骤中的 $Top-k$ 标记解码还是首选的标记选择是使用贪心解码（ $k =0$ ）。在每一步的 $Top‑k$ 候选标记（tokens） 中，隐藏着更丰富的推理链条，其中一些路径包含更清晰、逻辑更连贯的推理步骤。该研究通过分析这些 $Top‑k$ 候选项，其实对于类似于 $k \neq 0$ 有明显的思维链结构（CoT）的回答得到的结论，模型通常会有更高的置信度。
 
 <div align="center">
- <img width="1052" height="351" alt="5" src="https://github.com/user-attachments/assets/bce9a3de-339c-478d-ac98-e8af2919eb81" />
+ <img width="1052" height="351" alt="5" src="images/5.png" />
    <p>图5 CoT解码过程演示，每一步解码步骤中考虑多条解码路径</p>
 </div>
 
@@ -143,7 +143,7 @@ $$P(A \to C) = 0.6 \times 0.6 = \mathbf{0.360}$$
 &emsp;&emsp;在[Yue等人在2025年研究](https://arxiv.org/pdf/2504.13837)中得到观察。该工作对Qwen、LLaMA等基础模型及其经过强化学习微调的版本进行了系统比较。实验结果表明，当**k较小时**，强化学习模型的*Pass@k*通常明显高于基础模型；然而随着**k的增加**，基础模型的*Pass@k*会逐渐逼近强化学习模型，在部分任务上甚至可能出现反超现象。这一现象表明，在基础模型的输出分布中可能已经存在能够得到正确答案的推理轨迹，只是这些轨迹在原始分布中的概率相对较低，因此在小规模采样时较难被触发。
 
 <div align="center">
- <img width="947" height="813" alt="6" src="https://github.com/user-attachments/assets/f9d6d199-c785-4e50-96f7-cd945f53d29c" />
+ <img width="947" height="813" alt="6" src="images/6.png" />
    <p>图6 基础模型及其经RLVR训练的变体在多个数学基准数据集上的Pass@k曲线</p>
  </div>
 
@@ -166,7 +166,7 @@ $$P(A \to C) = 0.6 \times 0.6 = \mathbf{0.360}$$
 
 
 <div align="center">
-<img width="1200" height="500" alt="f6ffb7cdede20ccef60916b42b52209f" src="https://github.com/user-attachments/assets/6ebc754f-a818-479b-8f25-4d50f336b69e" />
+<img width="1200" height="500" alt="f6ffb7cdede20ccef60916b42b52209f" src="images/7.png" />
    <p>图7 不同大小均为1GB的数据集上的压缩率（压缩大小/原始大小），这个值越小越好。对于神经网络模型而言，原始压缩率不考虑参数大小，而调整后的压缩率则将参数大小视为压缩大小的一部分</p>
  </div>
 
@@ -189,7 +189,7 @@ $$P(A \to C) = 0.6 \times 0.6 = \mathbf{0.360}$$
 
 
 <div align="center">
-   <img width="400" height="500" alt="84eeee8168d21c09968077c583793673" src="https://github.com/user-attachments/assets/9bd1602a-a11d-4273-b785-6ce34b7db3cc" />
+   <img width="400" height="500" alt="84eeee8168d21c09968077c583793673" src="images/8.png" />
    <p>图8 分词器、BPE、词表大小和压缩率的相关研究</p>
  </div>
 
@@ -216,7 +216,7 @@ $$(Person, Relation) → Target Person$$
 &emsp;&emsp;2017年，Transformer架构的提出极大推动了自然语言处理的发展，也为后续大语言模型（LLM）的出现奠定了基础。直到2022年ChatGPT的出现，越来越多的人开始关注其中发挥核心作用的Transformer结构。2021年，[Mor Geva等人](https://aclanthology.org/2021.emnlp-main.446/)在中对Transformer中的重要组成部分——前馈神经网络（Feed-Forward Network, FFN）的内部机制进行了深入研究。
 
 
-![9](https://github.com/user-attachments/assets/aad2802b-6f4f-4c47-9693-bfae6f091d68)
+![9](images/9.jpg)
 
 
 &emsp;&emsp;在这项研究中，作者将FFN层中的神经元视为一种 **“键值记忆结构（key-value memory）”**。具体来说，研究者首先寻找能够**强烈激活某个神经元的输入前缀（triggering prefixes）**，并收集每个神经元最强的前25个触发前缀。随后，由人工专家对这些触发前缀进行语义类别标注，从而分析不同层神经元所捕获的语言模式。
@@ -240,7 +240,7 @@ $$(Person, Relation) → Target Person$$
 然而，*如果LLM仅仅是一台”复读机“，其依然无法解决未见过的复杂问题*。真正赋予其问题求解能力的，是模型参数在记忆字面文本之外，还隐式地压缩并内化了深层的结构化知识和解题模式。巧妙地唤醒这些抽象模板，才是大模型发挥推理能力的重要途径。 比如，Google DeepMind科学家Denny Zhou团队的一项研究展示了这一点：当直接要求顶级大语言模型求解一道复杂的几何计算题时，模型通常会失败；但如果在使用提示词时加上一句“*回忆一个相关的几何问题，然后解决当前问题*”，模型就能被成功激发，给出正确的解答。团队将这种通过引导模型自主生成相关背景知识来辅助当前计算的方法称为[LLM的类比推理](https://arxiv.org/pdf/2310.01714)。
 
 <div align="center">
-<img width="1062" height="477" alt="8" src="https://github.com/user-attachments/assets/21d53bf5-07cc-46c2-be68-83ba7b647865" />
+<img width="1062" height="477" alt="8" src="images/10.png" />
    <p>图11 类比推理</p>
 </div>
 
@@ -257,7 +257,7 @@ $$(Person, Relation) → Target Person$$
 
 
 <div align="center">
-<img width="1137" height="555" alt="6c5f4cf269b2faa4a7ea5c8f2cc90156" src="https://github.com/user-attachments/assets/9a28718f-0a57-4125-bb6a-25f47f1f0536" />
+<img width="1137" height="555" alt="6c5f4cf269b2faa4a7ea5c8f2cc90156" src="images/11.png" />
    <p>图12</p>
 </div>
 
@@ -287,7 +287,7 @@ $$(Person, Relation) → Target Person$$
 
 
 <div align="center">
-<img width="1176" height="402" alt="10" src="https://github.com/user-attachments/assets/faa17b80-a23f-482c-b863-22aa0ac12549" />
+<img width="1176" height="402" alt="10" src="images/12.png" />
    <p>图13 (a) 一个6层GPT2模型在不同难度级别的算术任务上的表现呈倒U形曲线。随着任务难度的增加，准确率峰值逐渐向更长的思维链长度偏移；(b) 随着强化学习训练的进行以及模型在推理任务上的准确率提升，使用在LeetCode-2K数据集上通过GRPO训练的Qwen2.5-7B-Instruct进行了这项实验。</p>
 </div>
 
@@ -302,7 +302,7 @@ $$(Person, Relation) → Target Person$$
 
 
 <div align="center">
-<img width="1002" height="516" alt="11" src="https://github.com/user-attachments/assets/a3fe6fc5-1ba5-4bcc-8e8b-8e74dacedb8a" />
+<img width="1002" height="516" alt="11" src="images/13.png" />
    <p>图14 DTR和解决问题accuracy的关系</p>
 </div>
 
@@ -368,7 +368,7 @@ $$(Person, Relation) → Target Person$$
 
 
 <div align="center">
-<img width="605" height="620" alt="12" src="https://github.com/user-attachments/assets/75f926e5-58be-4a0f-ac38-c5ab80f88eec" />
+<img width="605" height="620" alt="12" src="images/14.png" />
    <p>图15 外部搜索工具+LLM</p>
 </div>
 
