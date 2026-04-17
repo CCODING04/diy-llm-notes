@@ -152,6 +152,12 @@ uv.lock
 # Claude Code
 .claude/
 
+# Large fixture files (download from upstream)
+homework/assignment1/tests/fixtures/tinystories_sample_5M.txt
+homework/assignment1/tests/fixtures/gpt2_vocab.json
+homework/assignment1/tests/fixtures/gpt2_merges.txt
+homework/assignment1/tests/fixtures/corpus.en
+
 
 
 

@@ -23,7 +23,7 @@
 | # | 章节 | 状态 | 学习笔记 | 课后作业 |
 |:-:|------|:----:|:--------:|:--------:|
 | 1 | WandB 工具使用 | ✅ | [📖 notes.md](docs/chapter1/c/notes.md) | — |
-| 2 | 分词器 | ✅ | [📖 notes.md](docs/chapter2/c/notes.md) | 📂 `assignment1-basics` |
+| 2 | 分词器 | ✅ | [📖 notes.md](docs/chapter2/c/notes.md) | 🔨 BPE Part 1 ✅ |
 | 3 | PyTorch 与资源核算 | ○ | — | 📂 `assignment1-basics` |
 | 4 | 语言模型架构与训练细节 | ○ | — | 📂 `assignment1-basics` |
 | 5 | 混合专家模型（MoE） | ○ | — | — |
@@ -38,7 +38,7 @@
 | 14 | 可验证奖励的强化学习 | ○ | — | 📂 `assignment5-alignment` |
 | 15 | 扩展内容 | ○ | — | — |
 
-> ✅ 已完成 &nbsp;|&nbsp; ○ 未开始 &nbsp;|&nbsp; **2 / 15 章** &nbsp;|&nbsp; 最后更新：2026-04-15
+> ✅ 已完成 &nbsp;|&nbsp; ○ 未开始 &nbsp;|&nbsp; 🔨 作业进行中 &nbsp;|&nbsp; **2 / 15 章** &nbsp;|&nbsp; 最后更新：2026-04-17
 
 ---
 
@@ -90,9 +90,27 @@ docs/
 
 ## 🎯 当前建议
 
-1. **优先完成 Assignment 1**：第 2 章已学完，BPE 分词器和 Transformer 实现的课后作业可以开始做了
-2. **正则表达式复习**：学习过程中多次提出正则相关问题，建议系统复习 `[]` 内外行为差异
+1. **继续 Assignment 1 BPE Part 2**：Tokenizer 类已完成，接下来实现 BPE 训练（`run_train_bpe`）
+2. **Python 编码基础复习**：作业中多次出现 bytes/str/int 类型混淆，建议复习 `bytes` 迭代特性
 3. **下一章预告**：第 3 章 PyTorch 与资源核算，涉及 GPU 显存计算和算力估算
+
+---
+
+## 📦 课后作业
+
+### Assignment 1 - BPE Tokenizer（进行中）
+
+| Part | 内容 | 状态 | 笔记 |
+|:----:|------|:----:|:----:|
+| 1 | Tokenizer 类（encode/decode/encode_iterable） | ✅ 通过 | [📖 notes.md](homework/assignment1/notes.md) |
+| 2 | BPE 训练（train_bpe） | 🔨 进行中 | [📖 tutorial](homework/assignment1/tutorials/tutorial_part2.md) |
+| 3 | 汇总整合 + 完整测试 | ○ | — |
+
+- **代码**：[homework/assignment1/scripts/](homework/assignment1/scripts/)
+- **教程**：[homework/assignment1/tutorials/](homework/assignment1/tutorials/)
+- **学习建议**：[suggestion.md](homework/assignment1/suggestion.md)
+
+> **测试资源**：大型 fixture 文件（gpt2_vocab.json、gpt2_merges.txt、corpus.en、tinystories_sample_5M.txt）未纳入版本控制，请从 [Stanford CS336 原仓库](https://github.com/stanford-cs336/assignment1-basics/tree/main/tests/fixtures) 下载到 `homework/assignment1/tests/fixtures/`
 
 ---
 
