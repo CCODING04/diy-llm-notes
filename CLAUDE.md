@@ -5,7 +5,47 @@
 本仓库是一个自学 LLM 的教程，包含 15 章课程内容和 6 个课后作业。
 
 - **课程文档**：`docs/chapter{N}/`
-- **课后作业**：`coursework/assignment{N}-*/`
+- **课后作业（原始）**：`coursework/assignment{N}-*/`（来自 Stanford CS336，不修改）
+- **课后作业（实现）**：`homework/assignment{N}/`（用户代码和笔记）
+
+---
+
+## 作业目录约定
+
+### 目录结构
+
+```
+homework/assignment{N}/
+├── tutorials/            # 分步教程（由导师生成）
+│   ├── tutorial_part1.md
+│   ├── tutorial_part2.md
+│   └── ...
+├── scripts/              # 用户实现代码
+│   └── *.py
+├── tests/                # 测试用例和 fixtures
+│   ├── test_*.py
+│   └── fixtures/
+├── notes.md              # QA 记录 + 作业批改（逐字保留，只修改排版）
+├── suggestion.md         # 完成后生成的学习建议（基于错误分析）
+└── README.md             # 作业完成总结
+```
+
+### 关键文件说明
+
+| 文件 | 用途 | 规则 |
+|------|------|------|
+| `notes.md` | 对话 QA + 批改记录 | **逐字保留**，只允许修改排版，不允许删减内容 |
+| `suggestion.md` | 每个 part 通过后生成 | 基于错误次数/内容 + QA 记录分析知识薄弱点 |
+| `tutorials/` | 分步教程 | 引导式，不直接给答案 |
+| `tests/fixtures/` | 测试数据 | 大型文件通过 `.gitignore` 排除，README 中给出下载链接 |
+
+### 作业工作流概览
+
+详细流程见 `.claude/skills/repo-tutor/SKILL.md`，核心步骤：
+1. 分析原作业 → 拆分为 2-4 个 part
+2. 为每个 part 生成教程 → 用户实现 → 测试验证
+3. part 通过后生成 `suggestion.md`
+4. 全部 part 完成 → 汇总整合 → 更新进度
 
 ---
 
