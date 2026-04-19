@@ -23,8 +23,8 @@
 | # | 章节 | 状态 | 学习笔记 | 课后作业 |
 |:-:|------|:----:|:--------:|:--------:|
 | 1 | WandB 工具使用 | ✅ | [📖 notes.md](docs/chapter1/c/notes.md) | — |
-| 2 | 分词器 | ✅ | [📖 notes.md](docs/chapter2/c/notes.md) | 🔨 BPE Part 1 ✅ |
-| 3 | PyTorch 与资源核算 | ✅ | [📖 notes.md](docs/chapter3/c/notes.md) | 📂 `assignment1-basics` |
+| 2 | 分词器 | ✅ | [📖 notes.md](docs/chapter2/c/notes.md) | ✅ `assignment1-basics` |
+| 3 | PyTorch 与资源核算 | ✅ | [📖 notes.md](docs/chapter3/c/notes.md) | ✅ `assignment1-basics` |
 | 4 | 语言模型架构与训练细节 | ○ | — | 📂 `assignment1-basics` |
 | 5 | 混合专家模型（MoE） | ○ | — | — |
 | 6 | GPU 与相关优化 | ○ | — | 📂 `assignment2-systems` |
@@ -38,7 +38,7 @@
 | 14 | 可验证奖励的强化学习 | ○ | — | 📂 `assignment5-alignment` |
 | 15 | 扩展内容 | ○ | — | — |
 
-> ✅ 已完成 &nbsp;|&nbsp; ○ 未开始 &nbsp;|&nbsp; 🔨 作业进行中 &nbsp;|&nbsp; **3 / 15 章** &nbsp;|&nbsp; 最后更新：2026-04-18
+> ✅ 已完成 &nbsp;|&nbsp; ○ 未开始 &nbsp;|&nbsp; 🔨 作业进行中 &nbsp;|&nbsp; **3 / 15 章** &nbsp;|&nbsp; 最后更新：2026-04-19
 
 ---
 
@@ -106,21 +106,21 @@ docs/
 
 ## 🎯 当前建议
 
-1. **继续 Assignment 1 BPE Part 2**：Tokenizer 类已完成，接下来实现 BPE 训练（`run_train_bpe`）
+1. **开始第 4 章**：语言模型架构与训练细节，涉及 Transformer 核心组件
 2. **数值计算基础练习**：2 的幂次心算、AdaGrad vs Adam 内存区别、反向传播矩阵推导
-3. **下一章预告**：第 4 章 语言模型架构与训练细节，涉及 Transformer 核心组件
+3. **Assignment 2 预备**：第 4 章学完后可开始 assignment2-systems（Flash Attention、DDP）
 
 ---
 
 ## 📦 课后作业
 
-### Assignment 1 - BPE Tokenizer（进行中）
+### Assignment 1 - BPE Tokenizer（✅ 已完成）
 
 | Part | 内容 | 状态 | 笔记 |
 |:----:|------|:----:|:----:|
 | 1 | Tokenizer 类（encode/decode/encode_iterable） | ✅ 通过 | [📖 notes.md](homework/assignment1/notes.md) |
-| 2 | BPE 训练（train_bpe） | 🔨 进行中 | [📖 tutorial](homework/assignment1/tutorials/tutorial_part2.md) |
-| 3 | 汇总整合 + 完整测试 | ○ | — |
+| 2 | BPE 训练（train_bpe） | ✅ 通过 | [📖 tutorial](homework/assignment1/tutorials/tutorial_part2.md) |
+| 3 | 整合测试（训练→Tokenizer roundtrip） | ✅ 通过 | [📖 tutorial](homework/assignment1/tutorials/tutorial_part3.md) |
 
 - **代码**：[homework/assignment1/scripts/](homework/assignment1/scripts/)
 - **教程**：[homework/assignment1/tutorials/](homework/assignment1/tutorials/)

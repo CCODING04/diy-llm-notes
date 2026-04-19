@@ -122,13 +122,8 @@ def merge_pair(word: tuple, pair: tuple) -> tuple:
 ### Step 5：构建最终 vocab
 
 ```python
-# 收集所有 token（从合并后的 vocab 中）
-vocab_set = set()
-for word in vocab:
-    for token in word:
-        vocab_set.add(token)
-
 # 构建最终 vocab dict[int, bytes]
+# byte_decoder：将 Unicode 字符映射回原始字节值（byte_encoder 的逆映射）
 byte_decoder = {v: k for k, v in byte_encoder.items()}
 final_vocab = {}
 
@@ -142,6 +137,7 @@ for b in range(256):
     final_vocab[offset + b] = bytes([b])
 
 # 最后加 merge 产生的 token
+# merges 中每个 pair 的 token 是 Unicode 字符串，需逐字符转回 bytes
 for i, (s1, s2) in enumerate(merges):
     merged = s1 + s2
     token_bytes = bytes([byte_decoder[c] for c in merged])
