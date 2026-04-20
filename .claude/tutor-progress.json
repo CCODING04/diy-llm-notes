@@ -1,0 +1,33 @@
+{
+  "current_chapter": 3,
+  "current_module": 3,
+  "chapters": {
+    "1":  { "total_modules": 2, "completed_modules": [1, 2], "status": "completed" },
+    "2":  { "total_modules": 3, "completed_modules": [1, 2, 3], "status": "completed" },
+    "3":  { "total_modules": 3, "completed_modules": [1, 2, 3], "status": "completed" },
+    "4":  { "total_modules": 0, "completed_modules": [], "status": "not_started" },
+    "5":  { "total_modules": 0, "completed_modules": [], "status": "not_started" },
+    "6":  { "total_modules": 0, "completed_modules": [], "status": "not_started" },
+    "7":  { "total_modules": 0, "completed_modules": [], "status": "not_started" },
+    "8":  { "total_modules": 0, "completed_modules": [], "status": "not_started" },
+    "9":  { "total_modules": 0, "completed_modules": [], "status": "not_started" },
+    "10": { "total_modules": 0, "completed_modules": [], "status": "not_started" },
+    "11": { "total_modules": 0, "completed_modules": [], "status": "not_started" },
+    "12": { "total_modules": 0, "completed_modules": [], "status": "not_started" },
+    "13": { "total_modules": 0, "completed_modules": [], "status": "not_started" },
+    "14": { "total_modules": 0, "completed_modules": [], "status": "not_started" },
+    "15": { "total_modules": 0, "completed_modules": [], "status": "not_started" }
+  },
+  "assignments": {
+    "assignment1": {
+      "status": "completed",
+      "parts": {
+        "part1_tokenizer": "completed",
+        "part2_bpe_training": "completed",
+        "part3_integration": "completed"
+      },
+      "completed_date": "2026-04-19"
+    }
+  },
+  "assignments_reminded": []
+}
