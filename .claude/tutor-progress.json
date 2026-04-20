@@ -1,11 +1,11 @@
 {
-  "current_chapter": 3,
+  "current_chapter": 4,
   "current_module": 3,
   "chapters": {
     "1":  { "total_modules": 2, "completed_modules": [1, 2], "status": "completed" },
     "2":  { "total_modules": 3, "completed_modules": [1, 2, 3], "status": "completed" },
     "3":  { "total_modules": 3, "completed_modules": [1, 2, 3], "status": "completed" },
-    "4":  { "total_modules": 0, "completed_modules": [], "status": "not_started" },
+    "4":  { "total_modules": 4, "completed_modules": [], "status": "in_progress" },
     "5":  { "total_modules": 0, "completed_modules": [], "status": "not_started" },
     "6":  { "total_modules": 0, "completed_modules": [], "status": "not_started" },
     "7":  { "total_modules": 0, "completed_modules": [], "status": "not_started" },
