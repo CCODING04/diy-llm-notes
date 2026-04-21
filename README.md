@@ -12,7 +12,7 @@
 
 基于 [datawhalechina/diy-llm](https://github.com/datawhalechina/diy-llm) 教程的交互式学习记录
 
-[![进度](https://img.shields.io/badge/进度-3%2F15%20章-blue)](https://github.com/datawhalechina/diy-llm) [![课程](https://img.shields.io/badge/课程-CS336-green)](https://stanford-cs336.github.io/spring2025/)
+[![进度](https://img.shields.io/badge/进度-4%2F15%20章-blue)](https://github.com/datawhalechina/diy-llm) [![课程](https://img.shields.io/badge/课程-CS336-green)](https://stanford-cs336.github.io/spring2025/)
 
 </div>
 
@@ -25,7 +25,7 @@
 | 1 | WandB 工具使用 | ✅ | [📖 notes.md](docs/chapter1/c/notes.md) | — |
 | 2 | 分词器 | ✅ | [📖 notes.md](docs/chapter2/c/notes.md) | ✅ `assignment1-basics` |
 | 3 | PyTorch 与资源核算 | ✅ | [📖 notes.md](docs/chapter3/c/notes.md) | ✅ `assignment1-basics` |
-| 4 | 语言模型架构与训练细节 | ○ | — | 📂 `assignment1-basics` |
+| 4 | 语言模型架构与训练细节 | ✅ | [📖 notes.md](docs/chapter4/c/notes.md) | 📂 `assignment1-basics` |
 | 5 | 混合专家模型（MoE） | ○ | — | — |
 | 6 | GPU 与相关优化 | ○ | — | 📂 `assignment2-systems` |
 | 7 | GPU 高性能编程 | ○ | — | 📂 `assignment2-systems` |
@@ -38,7 +38,7 @@
 | 14 | 可验证奖励的强化学习 | ○ | — | 📂 `assignment5-alignment` |
 | 15 | 扩展内容 | ○ | — | — |
 
-> ✅ 已完成 &nbsp;|&nbsp; ○ 未开始 &nbsp;|&nbsp; 🔨 作业进行中 &nbsp;|&nbsp; **3 / 15 章** &nbsp;|&nbsp; 最后更新：2026-04-19
+> ✅ 已完成 &nbsp;|&nbsp; ○ 未开始 &nbsp;|&nbsp; 🔨 作业进行中 &nbsp;|&nbsp; **4 / 15 章** &nbsp;|&nbsp; 最后更新：2026-04-21
 
 ---
 
@@ -61,6 +61,12 @@ docs/
 │   ├── module1.md            # 资源核算思维与张量基础
 │   ├── module2.md            # 内存管理与计算效率
 │   ├── module3.md            # 模型构建与训练基础
+│   └── notes.md              # 📊 学习总结 + QA 归档
+├── chapter4/c/               # 第4章
+│   ├── module1.md            # 标准 Transformer 架构回顾
+│   ├── module2.md            # 现代变体（归一化与激活函数）
+│   ├── module3.md            # 现代变体（位置编码与注意力机制）
+│   ├── module4.md            # 超参数设计与训练稳定性
 │   └── notes.md              # 📊 学习总结 + QA 归档
 └── ...
 ```
@@ -102,13 +108,25 @@ docs/
 - **掌握扎实**：张量维度操作与 einops、训练循环流程、反向传播概念、混合精度直觉
 - **待加强**：数值计算精度（2 的幂次换算、多卡乘数）、资源核算公式细节（AdaGrad vs Adam 内存）、数学推导书面表达
 
+### 第 4 章：语言模型架构与训练细节
+
+| 模块 | 标题 | 得分 |
+|:----:|------|:----:|
+| 1 | 标准 Transformer 架构回顾 | 22/30 |
+| 2 | 现代变体（归一化与激活函数） | 18/30 |
+| 3 | 现代变体（位置编码与注意力机制） | 21/30 |
+| 4 | 超参数设计与训练稳定性 | 17/30 |
+
+- **掌握扎实**：Transformer 四大核心组件、RoPE 数学推导、MQA/GQA/MLA 对比、KV Cache 原理
+- **待加强**：正弦编码 vs RoPE 精确区别、RMSNorm 去掉的具体内容、MLA 缓存细节、权重衰减与 lr 正相关关系、SwiGLU 参数量计算
+
 ---
 
 ## 🎯 当前建议
 
-1. **开始第 4 章**：语言模型架构与训练细节，涉及 Transformer 核心组件
-2. **数值计算基础练习**：2 的幂次心算、AdaGrad vs Adam 内存区别、反向传播矩阵推导
-3. **Assignment 2 预备**：第 4 章学完后可开始 assignment2-systems（Flash Attention、DDP）
+1. **开始第 5 章**：混合专家模型（MoE），涉及稀疏激活与路由机制
+2. **Assignment 1 补充**：第 4 章对应 assignment1-basics 的 Transformer 实现部分，建议复习
+3. **巩固练习**：手算 FFN 参数量（ReLU vs SwiGLU）、对比正弦编码和 RoPE 的注意力分数矩阵
 
 ---
 
