@@ -613,3 +613,183 @@ DeepSpeed-MoE:      "我让 MoE 在真实大规模系统上跑得起来"
 2. PDF 课件重点在 MoE 的架构设计，系统优化属于"工程实现"范畴
 3. DeepSpeed-MoE 的系统优化需要分布式训练的前置知识（All-to-All、专家并行、张量切片等），这些内容在第 8 章才详细讲
 4. Switch Transformer 提出的 Top-1 路由、Z-loss 是通用设计原则，DeepSpeed 的 PR-MoE/MoS 是特定工程方案，课程倾向于教原则而非特定方案
+
+---
+
+## 模块 3：MoE 在 LLM 中的实践 — QA 记录
+> 📅 2026-04-25 ~ 2026-04-27
+
+**Q**：教程中 ByteTokenizer 的对比表提到 BPE 有 OOV 问题，但 BPE 从字节开始构建不是没有 OOV 问题吗？
+
+**A**：
+
+你说得对，这个表述不精确。
+
+**BPE 实际上也没有 OOV 问题**——至少在现代实现中。关键在于"BPE 有两种退化策略"：
+
+```
+传统 BPE（字符级，Sennrich 2016 原始论文）:
+  词表由训练语料的高频字符对合并而来
+  如果某个 Unicode 字符在训练集中从未出现 → 退化为 <UNK>
+  → 有 OOV（但极其罕见）
+
+现代 BPE（字节级，GPT-2/3/4 使用的方案）:
+  基础词表 = 256 个字节 → 任何 UTF-8 文本都能表示
+  未见过的词 → 无法合并 → 退化为单字节序列
+  → 无 OOV，只是 tokenization 更长
+```
+
+所以教程中"BPE 有 OOV 问题"这个说法不准确。**字节级 BPE 和字节级分词器都没有 OOV**。区别在于：
+
+```
+ByteTokenizer（本代码）:
+  "cat" → [c, a, t] = 3 个 token（固定，无论训练数据是什么）
+  "猫"  → [229, 165, 189] = 3 个 token（UTF-8 三字节）
+
+BPE（训练后）:
+  "cat" → [cat] = 1 个 token（高频词，合并为一个）
+  "猫"  → [猫] = 1 个 token（如果训练数据有中文）
+  或 [229, 165, 189] = 3 个 token（如果训练数据无中文，退化为字节）
+```
+
+真正的差异不是 OOV，而是**压缩率**：BPE 对高频词合并后序列更短（"cat" 只需 1 token），ByteTokenizer 永远按字节拆分（"cat" 始终 3 token）。已修正教程中的表述。
+
+---
+
+**Q**：教程中代码 `q = q.view(B, T, self.nhead, self.d_k).transpose(1, 2)`，transpose 不是不能保证连续吗，需要 contiguous 来让底层数据连续，为什么这里不需要 contiguous？
+
+**A**：
+
+好问题。这里的关键是**哪些操作需要 contiguous，哪些不需要**。
+
+**`view` 需要 contiguous，`matmul` 不需要**：
+
+```python
+# 这里用了 view → 需要 contiguous 吗？
+q = q.view(B, T, self.nhead, self.d_k)    # ✅ view 之前 q 是 contiguous 的
+q = q.transpose(1, 2)                      # transpose 产生非连续视图，但这没问题
+                                            # 因为后续没有再对 q 做 view
+
+# matmul 不关心是否 contiguous——它按 stride 读数据，不假设内存连续
+scores = torch.matmul(q, k.transpose(-2, -1))   # ✅ 非连续也能算
+
+# 唯一需要 contiguous 的地方：
+out = out.transpose(1, 2).contiguous().view(B, T, D)
+                    # ↑ transpose 后要 view，所以必须先 contiguous
+```
+
+**`transpose` 做了什么？**
+
+```
+原始张量 shape=[B, T, H, d_k]，stride=[T*H*d_k, H*d_k, d_k, 1]
+                                              ↓
+transpose(1, 2) 只是交换 stride[1] 和 stride[2]，不移动任何数据
+新 shape=[B, H, T, d_k]，stride=[T*H*d_k, d_k, H*d_k, 1]
+                                              ↑
+                     stride 不再是降序排列 → "非连续"
+                     但数据在内存中完全一样，只是读取顺序变了
+```
+
+**为什么 `matmul` 能处理非连续输入？**
+
+`matmul` 底层调用的是 BLAS/cuBLAS 矩阵乘法，它按 stride 逐元素读取，不要求数据在内存中连续排列。
+
+**`view` 为什么必须 contiguous？**
+
+`view` 的实现是：`shape × stride → 新 shape × 新 stride`，假设元素在内存中按行优先紧密排列。如果 stride 非降序（transpose 后的情况），view 无法推导出正确的新 stride，直接报错。
+
+**总结：代码中 `contiguous()` 出现的位置完全对应 `view` 的调用**：
+
+```python
+# 第一处：reshape 进入多头
+q = q.view(B, T, self.nhead, self.d_k).transpose(1, 2)
+# ↑ view 在 transpose 之前，此时 q 刚从 qkv.chunk 出来，是 contiguous 的 ✅
+
+# 第二处：reshape 回单头
+out = out.transpose(1, 2).contiguous().view(B, T, D)
+# ↑ view 在 transpose 之后，必须先 contiguous ✅
+```
+
+---
+
+**Q**：为什么 `nn.Linear(d_model, vocab_size, bias=False)` 的 weight.shape 是 `[vocab_size, d_model]`，linear 内部结构是什么样的？weight 需要转置再和输入做乘积吗？
+
+**A**：
+
+`nn.Linear(in_features, out_features)` 的内部结构：
+
+```
+内部参数:
+  weight: [out_features, in_features] = [vocab_size, d_model]
+  bias:   无（如果 bias=False）
+
+前向计算（PyTorch 默认公式）:
+  y = x @ weight.T + bias
+      ──   ────────
+      │       │
+      │       └── weight [vocab_size, d_model] → 转置 → [d_model, vocab_size]
+      └── x [B, T, d_model]
+
+  结果: [B, T, d_model] @ [d_model, vocab_size] = [B, T, vocab_size] ✅
+```
+
+**为什么 weight 存成 `[out, in]` 而不是 `[in, out]`？**
+
+这是 PyTorch 的历史约定，公式写成 `y = xA^T + b`（数学文献中常见的矩阵乘法形式）。好处是**行向量 = 一个样本的权重**：
+
+```
+weight[vocab_size, d_model] 的第 i 行 = 第 i 个输出神经元的权重向量
+
+weight[0, :] = [w0, w1, ..., w_{d_model-1}]  ← 输出位置 0 的权重
+weight[1, :] = [w0, w1, ..., w_{d_model-1}]  ← 输出位置 1 的权重
+```
+
+`nn.Linear` 内部**确实做了转置**，但这是自动的（`x @ weight.T`），调用者不需要手动操作。`lm_head.weight` shape `[vocab_size, d_model]` 就是 `[out, in]` 的标准存储格式。
+
+---
+
+<!-- 以下为正式作业批改记录，从模块文档逐字复制 -->
+
+## 模块 3：正式作业批改记录
+> 📅 2026-04-27
+
+**Q1 批改**：
+
+✅ 被丢弃 token 的 MoE 输出为 0 — 正确
+✅ 残差连接保证信息不丢失 — 正确，核心机制抓住了
+✅ 画了数据流示意图，方向正确 — 好习惯
+⚠️ 图示不够精确：你的 `x_out` 没有体现"为什么是 0"。完整链路是：
+   - `out_flat = torch.zeros_like(x_flat)` → 初始化全零
+   - 被丢弃 token 的位置**从未被写入** → 保持为 0
+   - `x + dropout(0)` = `x + 0` = `x`
+   缺少"out_flat 初始化为零 + 未写入位置保持零"这个关键步骤
+⚠️ 图示中的 `x -> layer_norm -> MOE_layer -> x_out + x` 省略了 dropout，正确应为 `x = x + dropout(moe(LN(x)))`。dropout 对零向量无影响（0 仍为 0），但形式上应该包含
+
+— 得分：**7/10**
+
+**Q2 批改**：
+
+✅ 指出 gather 更通用 — 正确
+✅ 提到 Top-K > 1 时 gather 仍适用 — 正确
+⚠️ 遗漏了一个关键点：在 Top-1 下 `scores.max` 和 `gather` **结果完全相同**，区别不是"max 只能 Top-1"，而是：
+   - `gather` 可以取**任意位置**的值（第 1 大、第 2 大、指定索引），代码改 Top-K 时只需改 topk 索引，`gather` 行不用动
+   - `max` 只能取最大值，如果改为取第 2 大需要换 API（`topk` 或 `sort`）
+   → 代码可维护性更好，不是"能不能用"的问题，是"改起来方不方便"的问题
+
+— 得分：**6/10**
+
+**Q3 批改**：
+
+✅ ReLU 在 x<0 时梯度为 0，导致神经元坏死 — 正确
+✅ GELU 在 0 附近有梯度，不会坏死 — 正确
+✅ 指出影响专家的"知识存储能力" — 方向正确
+⚠️ 可以补充更具体的机制：ReLU 死神经元在 MoE 中比 Dense 模型更严重——因为每个专家只处理一部分 token，如果某个专家有 30% 的神经元坏死，该专家的**有效参数量**就从 8d² 降到 5.6d²，而 Dense 模型所有 token 共享 FFN，坏死神经元的影响被大量正常 token 稀释。MoE 的"专家孤立性"放大了死神经元的影响
+
+— 得分：**7/10**
+
+**综合评价**：20/30。三个问题都抓住了核心要点，对 MoE 的残差保护、代码设计、激活函数选择有清晰理解。主要改进方向：
+1. **数据流追踪精度**：描述"输出为 0"时要追溯到 `zeros_like` 初始化 + 未写入位置保持零，不要只说"丢失了"
+2. **对比论述的完整性**：说 A 比 B 好时，先确认两者在当前条件下等价，再分析可维护性差异
+3. **MoE 特有视角**：讨论 MoE 中的问题时，想想"Dense 模型下这个问题也存在吗？MoE 放大了还是缩小了？"
+
+**批改时间**：2026-04-27
