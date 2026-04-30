@@ -96,7 +96,7 @@ allowed-tools: Bash(git*), Read, Grep, Glob, Write, Edit, WebSearch, mcp__MiniMa
    - 重点提取：① .md 中未提及的公式/数据 ② 消融实验结论 ③ 各模型参数对比表 ④ 训练稳定性图表
    - PDF 补充内容标注来源为：`> 💡 **补充（PDF 课件 / [来源名]）**：`
 
-2. **内容交叉验证**（每章执行一次，Context7 和 Web Search **两者都必须执行**）
+2. **内容交叉验证**（每个模块生成前执行一次，Context7 和 Web Search **两者都必须执行**）
 
    **① Context7 查询（优先执行，必须执行，数据更新且可靠）**
    - 识别章节涉及的主要开源库/框架（如 `tokenizers`、`torch`、`wandb`、`transformers`）

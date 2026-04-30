@@ -1,13 +1,13 @@
 {
-  "current_chapter": 5,
-  "current_module": 4,
+  "current_chapter": 6,
+  "current_module": 2,
   "chapters": {
     "1":  { "total_modules": 2, "completed_modules": [1, 2], "status": "completed" },
     "2":  { "total_modules": 3, "completed_modules": [1, 2, 3], "status": "completed" },
     "3":  { "total_modules": 3, "completed_modules": [1, 2, 3], "status": "completed" },
     "4":  { "total_modules": 4, "completed_modules": [1, 2, 3, 4], "status": "completed" },
-    "5":  { "total_modules": 4, "completed_modules": [1, 2, 3], "status": "in_progress" },
-    "6":  { "total_modules": 0, "completed_modules": [], "status": "not_started" },
+    "5":  { "total_modules": 4, "completed_modules": [1, 2, 3, 4], "status": "completed" },
+    "6":  { "total_modules": 5, "completed_modules": [1], "status": "in_progress" },
     "7":  { "total_modules": 0, "completed_modules": [], "status": "not_started" },
     "8":  { "total_modules": 0, "completed_modules": [], "status": "not_started" },
     "9":  { "total_modules": 0, "completed_modules": [], "status": "not_started" },
