@@ -157,6 +157,10 @@ GELU 性能对比（dim=16384，A100）：
 排序：PyTorch 内置 > torch.compile > CUDA ≈ Triton >> 手动实现
 ```
 
+<img src="https://raw.githubusercontent.com/datawhalechina/diy-llm/main/docs/chapter7/images/7-19-triton的gelu的性能分析.png" width="800" alt="四种 GELU 实现的性能对比">
+
+<img src="https://raw.githubusercontent.com/datawhalechina/diy-llm/main/docs/chapter7/images/7-20-triton的gelu的性能分析2.png" width="800" alt="Triton GELU 性能分析：单个内核占 100% GPU 时间">
+
 ```
 关键发现：
 
@@ -190,6 +194,10 @@ torch.compile 做了什么：
 
 一行代码，从 8.1ms 降到 1.47ms
 ```
+
+<img src="https://raw.githubusercontent.com/datawhalechina/diy-llm/main/docs/chapter7/images/7-21-compile的的时间消耗.png" width="800" alt="torch.compile 时间对比">
+
+<img src="https://raw.githubusercontent.com/datawhalechina/diy-llm/main/docs/chapter7/images/7-22-compil的gelu的性能分析.png" width="800" alt="torch.compile GELU 性能分析">
 
 #### 4.2 torch.compile 的适用边界
 
@@ -307,16 +315,171 @@ AMD ROCm 支持：
 
 **A1**：
 
+因为 Triton 是以 块 为基本单位的，所以 triton 的抽象层理解是批量的数据，因此对于 offsets 符合 Triton 的单位编程概念。
+而 CUDA 是以线程为单位编程的，所以 CUDA 需要关注每个线程操作的数据内容，因此操作的是 int i 对应线程 x 处理的数据地址。
 
 
 **A2**：
+
+因为 torch.compile 追踪图计算，然后再做图优化，背后仍然是 triton 代码生成。
+在某些情况下，triton 代码生成经过更多的专业优化更有优势。但是当涉及到 attention 的 online softmax 这类算法优化时，手写 CUDA/Triton 仍然有价值。
 
 
 
 **A3**：
 
+问题 3 和 问题2 近似。
+
+torch.compile 需要先追踪图计算、再做图优化、再通过 JIT 生成 CUDA 代码、缓存下来后方便后续直接使用。
+
+需要学习 Triton/CUDA 代码是为了针对算法瓶颈进行优化时，能从更多的角度思考挖掘，并且针对算法进行优化。
 
 
 ---
 
 <!-- 教师批改区（提交作业后由导师填写，请勿手动修改） -->
+
+### 📝 批改结果
+
+**Q1 批改**：正确把握了"块 vs 线程"的高层区别，但缺少关键技术细节：offsets 是向量意味着什么——Triton 的 `tl.load`/`tl.store` 是 SIMD 式的批量操作，一次处理 BLOCK_SIZE 个元素；而 CUDA 的 `i` 是标量，每个线程只处理 1 个元素。补充这一点后答案就完整了。 — 得分：**7/10**
+
+<details>
+<summary>📖 Q1 参考答案</summary>
+
+**本质区别：标量操作 vs 向量操作**
+
+```
+CUDA（线程视角）：
+  int i = blockIdx.x * blockDim.x + threadIdx.x;
+  // i 是一个标量（int），代表当前线程处理的 1 个元素
+
+  out[i] = 0.5 * in[i] * (1.0 + tanh(...));
+  // 每次操作只处理 1 个 float
+
+Triton（块视角）：
+  offsets = block_start + tl.arange(0, BLOCK_SIZE)
+  // offsets 是一个向量（长度 BLOCK_SIZE），代表当前块要处理的所有元素
+
+  x = tl.load(x_ptr + offsets, mask=mask)    // 一次加载 BLOCK_SIZE 个元素
+  y = 0.5 * x * (1 + tanh(...))              // 一次计算 BLOCK_SIZE 个结果
+  tl.store(y_ptr + offsets, y, mask=mask)     // 一次存储 BLOCK_SIZE 个结果
+```
+
+**具体差异**：
+
+| 维度 | CUDA | Triton |
+|------|------|--------|
+| 基本单位 | 1 个线程 → 1 个标量 | 1 个块 → 1 个向量 |
+| 索引类型 | `int i`（标量） | `tl.arange()`（向量） |
+| 加载方式 | `float x = in[i]`（标量加载） | `x = tl.load(ptr + offsets)`（向量加载） |
+| 运算方式 | 标量运算（每线程独立） | 向量运算（编译器自动映射到线程） |
+| 编程心智模型 | 需要想"我这个线程做什么" | 只需想"这个块处理哪些数据" |
+
+**直觉类比**：
+- CUDA = 每个工人（线程）搬 1 块砖
+- Triton = 工头（块）指挥一组工人一次性搬 1024 块砖，工头不用关心每个工人具体搬哪块
+
+</details>
+
+---
+
+**Q2 批改**：torch.compile 比 CUDA 快的原因说得对（Triton 代码生成 + 更多优化）。手写价值的回答正确但不够完整——补充两点：① torch.compile 可能遇到 graph break 导致优化不完整；② 利用特定硬件特性（如 H100 WGMMA、异步执行）编译器无法自动发现。 — 得分：**8/10**
+
+<details>
+<summary>📖 Q2 参考答案</summary>
+
+**为什么 torch.compile（1.47ms）比手写 CUDA（1.84ms）还快？**
+
+```
+torch.compile 的优化链：
+  ① TorchDynamo 追踪 Python 计算图
+  ② TorchInductor 将图编译为 Triton 代码
+  ③ Triton 编译器进行自动优化（内存合并、寄存器分配、指令调度）
+  ④ 编译器可能比手写代码做了更精细的优化
+
+手写 CUDA 的局限：
+  → 你手动选择的 block_size（1024）可能不是最优的
+  → 编译器可以自动尝试不同配置并选择最快的
+  → torch.compile 还可以自动选择最优 GEMM 内核（如前面 profiling 讲的）
+```
+
+**什么时候手写 CUDA/Triton 仍然有价值？**
+
+```
+① 算法层面的创新
+   → FlashAttention 的 Online Softmax：需要重新设计计算流程
+   → 编译器只能优化"已有计算图"，不能发明新的算法
+
+② 利用特定硬件特性
+   → H100 的 WGMMA（Warp Group Matrix Multiply-Accumulate）
+   → H100 的异步流水线执行（TMA + WGMMA overlap）
+   → 这些硬件特性需要显式编程，编译器无法自动发现
+
+③ 编译器遇到 graph break
+   → 动态控制流、Python 原生操作等会导致计算图断裂
+   → 图断裂后编译器无法做全局优化
+
+④ 需要精确控制共享内存和寄存器
+   → FlashAttention 手动管理 SRAM 中的 Q/K/V 分块
+   → 编译器的自动分配可能不够高效
+```
+
+</details>
+
+---
+
+**Q3 批改**：torch.compile 的四步流程答对了。但"为什么还需要 Triton/CUDA"的回答太笼统，缺少具体场景。上一题你应该已经有了这些场景（Online Softmax、硬件特性），这题应该展开说。 — 得分：**6/10**
+
+<details>
+<summary>📖 Q3 参考答案</summary>
+
+**torch.compile 的工作原理**：
+
+```
+manual_gelu(x)  →  TorchDynamo（追踪）→  计算图（FX Graph）
+                         ↓
+                   TorchInductor（优化 + 编译）
+                         ↓
+                   Triton / C++ 内核（JIT 编译）
+                         ↓
+                   缓存结果，后续调用直接使用
+
+四步：追踪计算图 → 图优化（算子融合等）→ JIT 编译为 CUDA 代码 → 缓存
+```
+
+**为什么还需要学习 Triton/CUDA？**
+
+```
+① torch.compile 有适用边界
+   → 简单的算子融合：编译器擅长 ✅
+   → FlashAttention 级别的优化：需要算法创新，编译器做不到 ❌
+   → 编译器优化的是"已有计算图"，不能发明新的计算策略
+
+② 编译器可能遇到 graph break
+   → 动态控制流（if/for 依赖运行时数据）
+   → Python 原生操作（print、断言、第三方库调用）
+   → 图断裂后只做局部优化，性能可能不如手写
+
+③ 硬件特性的显式利用
+   → H100 的异步 TMA（Tensor Memory Accelerator）
+   → FlashAttention 3 利用 H100 硬件的 WGMMA + 异步流水线
+   → 这些需要开发者理解硬件并显式编程
+
+④ 调试和理解能力
+   → 当 torch.compile 性能不理想时，需要理解底层发生了什么
+   → 会 Triton/CUDA 才能读编译器生成的代码、定位瓶颈
+
+⑤ 新架构开发
+   → 设计新的注意力变体、新的 MoE 路由策略
+   → 需要手写内核来验证想法，不能等编译器支持
+```
+
+**核心观点**：torch.compile 是第一选择（成本最低），但当它不够好时，Triton/CUDA 是你的工具箱。
+
+</details>
+
+---
+
+**综合评价**：7.0/10 — Triton 和 torch.compile 的核心概念理解正确，但表述偏概括，缺少具体技术细节和场景展开。建议在回答时多用"具体场景 + 具体原因"的结构。
+
+**批改时间**：2026-05-08

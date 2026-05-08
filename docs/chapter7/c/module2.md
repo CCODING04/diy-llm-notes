@@ -47,6 +47,12 @@
   torch.compile：1.47 ms（自动融合）
 ```
 
+<img src="https://raw.githubusercontent.com/datawhalechina/diy-llm/main/docs/chapter7/images/7-14-两个gelu的时间.png" width="800" alt="手动 vs PyTorch GELU 时间对比">
+
+<img src="https://raw.githubusercontent.com/datawhalechina/diy-llm/main/docs/chapter7/images/7-15-手动gelu的性能分析.png" width="800" alt="手动 GELU 性能分析：3 个 CUDA 内核">
+
+<img src="https://raw.githubusercontent.com/datawhalechina/diy-llm/main/docs/chapter7/images/7-16-pytorch的gelu的性能分析.png" width="800" alt="PyTorch GELU 性能分析：1 个融合内核">
+
 #### 1.2 性能差距的根本原因
 
 ```
@@ -259,16 +265,151 @@ CUDA GELU 的 profiling：
 
 **A1**：
 
+每个 内核 都有 HBM 搬运数据到 SM 共享内存的时间，以及数据从 SM 写到 HBM 的时间开销，每次开销延迟 2~5 ms，所以多个 kernel 操作有多个延迟叠加，因此 3 个内核操作相较于 1 个内核操作多了 4 个搬运的开销。
 
 
 **A2**：
 
+`int i = blockIdx.x * blockDim.x + threadIdx.x` 这行代码根据 块信息、块内线程数量以及线程 id 能定位到 线程的全局位置，方便快速索引数据。
+如果总元素数据是 3000， block_size = 1024, 那么需要 3 个 block 来处理所有元素。
+block 1 范围：0 ~ 1023
+block 2 范围：1024 ~ 2047
+block 3 范围： 2048 ~ 3000
+如果不做越界检查，i 可以取值到 3071, 会越界访问额外的数据。
+
 
 
 **A3**：
+
+选择 `empty_like` 而不是 `zero_like` 是因为 `empty_like` 时间开销较少，只分配了数据空间，而不对内部数据做处理（因为后续会对该部分数据赋值）。
+而 `zero_like` 分配了数据空间，并且还需要将该部分数据置 0，多了一步赋值操作，相当于多做了一次 kernel 操作。
 
 
 
 ---
 
 <!-- 教师批改区（提交作业后由导师填写，请勿手动修改） -->
+
+### 📝 批改结果
+
+**Q1 批改**：核心思路正确——多个内核 = 多次 HBM 往返 = 延迟叠加。但"每次开销 2~5ms"不准确，A100 HBM 带宽 2TB/s，单次往返延迟约在微秒级，8.1ms 中的差距主要来自 3 次内核启动开销 + 3 次 HBM 往返的总和，而非每次 2~5ms。另外应该是多了 2 次额外往返（3次 vs 1次），不是 4 次。 — 得分：**7/10**
+
+<details>
+<summary>📖 Q1 参考答案</summary>
+
+**3 个内核 vs 1 个内核的性能差距**：
+
+```
+手动实现（3 个内核）的执行流程：
+
+  内核 1（立方运算）：
+    HBM → SM：读取 x
+    SM：计算 x³
+    SM → HBM：写回 x³
+
+  内核 2（乘法 + tanh）：
+    HBM → SM：读取 x 和 x³
+    SM：计算 0.044715*x³ + x → 0.79788456*... → tanh
+    SM → HBM：写回中间结果
+
+  内核 3（最终乘法）：
+    HBM → SM：读取 x 和中间结果
+    SM：计算 0.5 * x * (1 + tanh)
+    SM → HBM：写回 y
+
+  总计：3 次内核启动 + 3 次完整的 HBM ↔ SM 往返
+```
+
+```
+PyTorch 融合内核（1 个内核）的执行流程：
+
+  融合内核：
+    HBM → SM：读取 x（1 次）
+    SM 内部：x³ → 乘法 → 加法 → tanh → 最终乘法
+             （全部在寄存器/SRAM 中完成，不经过 HBM）
+    SM → HBM：写回 y（1 次）
+
+  总计：1 次内核启动 + 1 次 HBM ↔ SM 往返
+```
+
+**瓶颈分析**：
+- 每次 HBM ↔ SM 往返有固定的延迟开销（内存访问延迟）
+- 每次内核启动有 CPU 调度开销（cudaLaunchKernel）
+- 3 次 vs 1 次 = 多了 2 次额外 HBM 往返 + 2 次额外内核启动开销
+- 瓶颈是 **DRAM ↔ SM 的通信成本**，不是计算量（两种方式计算量完全相同）
+
+</details>
+
+---
+
+**Q2 批改**：完全正确。全局坐标公式、Block 范围划分、越界检查原因都答对了。 — 得分：**9/10**
+
+<details>
+<summary>📖 Q2 参考答案</summary>
+
+**全局坐标公式的作用**：
+
+`int i = blockIdx.x * blockDim.x + threadIdx.x` 计算当前线程的全局索引，让每个线程知道自己应该处理数组中的哪个元素。
+
+**3000 个元素、block_size=1024 的情况**：
+
+```
+需要的 Block 数 = ⌈3000/1024⌉ = 3
+
+Block 0：i = 0*1024 + threadIdx.x，threadIdx.x ∈ [0, 1023]
+  → 处理元素范围：[0, 1023]（1024 个元素）
+
+Block 1：i = 1*1024 + threadIdx.x，threadIdx.x ∈ [0, 1023]
+  → 处理元素范围：[1024, 2047]（1024 个元素）
+
+Block 2：i = 2*1024 + threadIdx.x，threadIdx.x ∈ [0, 1023]
+  → 处理元素范围：[2048, 3071]，但数组只到 2999
+  → threadIdx.x ∈ [0, 951] 对应 i ∈ [2048, 2999] ✅
+  → threadIdx.x ∈ [952, 1023] 对应 i ∈ [3000, 3071] ❌ 越界！
+```
+
+**越界检查的必要性**：
+- Block 数量是向上取整得到的，最后一个 Block 会有多余的线程
+- 不做越界检查：i=3000~3071 的线程会访问数组越界内存 → 未定义行为（可能崩溃或数据损坏）
+- `if (i < num_elements)` 让越界线程直接跳过，不执行任何操作
+
+</details>
+
+---
+
+**Q3 批改**：完全正确。empty_like 只分配不初始化，zeros_like 分配 + 清零多一次内核启动，对后续会被覆盖的输出张量来说是无意义的额外开销。 — 得分：**9/10**
+
+<details>
+<summary>📖 Q3 参考答案</summary>
+
+**empty_like vs zeros_like 的区别**：
+
+```
+empty_like(x)：
+  → 调用 GPU 内存分配器，分配一块与 x 同大小的内存
+  → 不初始化，内存内容是未定义的（垃圾值）
+  → 操作：1 次（仅分配）
+
+zeros_like(x)：
+  → 分配内存
+  → 启动一个 CUDA 内核将所有字节清零
+  → 操作：2 次（分配 + 清零内核）
+```
+
+**性能影响**：
+- zeros_like 的清零操作会触发一次额外的 CUDA 内核启动
+- 这次内核启动有调度开销（CPU 侧）和计算开销（GPU 侧）
+- 对于 GELU 这样的逐元素操作，输出 y 的每个位置都会被覆盖，清零毫无意义
+- 省去这次内核启动 = 减少一次无意义的 GPU 操作
+
+**类似优化思路**：
+- 如果确定输出的每个位置都会被写入，用 `empty_like`
+- 如果只写入部分位置（如 scatter 操作），需要 `zeros_like` 确保未写入位置为 0
+
+</details>
+
+---
+
+**综合评价**：三道题核心概念都掌握了，Q2 和 Q3 几乎满分。Q1 的原理理解正确，但数值描述不够精确。整体可以继续。
+
+**批改时间**：2026-05-08

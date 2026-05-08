@@ -12,7 +12,7 @@
 
 基于 [datawhalechina/diy-llm](https://github.com/datawhalechina/diy-llm) 教程的交互式学习记录
 
-[![进度](https://img.shields.io/badge/进度-6%2F15%20章-blue)](https://github.com/datawhalechina/diy-llm) [![课程](https://img.shields.io/badge/课程-CS336-green)](https://stanford-cs336.github.io/spring2025/)
+[![进度](https://img.shields.io/badge/进度-7%2F15%20章-blue)](https://github.com/datawhalechina/diy-llm) [![课程](https://img.shields.io/badge/课程-CS336-green)](https://stanford-cs336.github.io/spring2025/)
 
 </div>
 
@@ -28,7 +28,7 @@
 | 4 | 语言模型架构与训练细节 | ✅ | [📖 notes.md](docs/chapter4/c/notes.md) | 📂 `assignment1-basics` |
 | 5 | 混合专家模型（MoE） | ✅ | [📖 notes.md](docs/chapter5/c/notes.md) | — |
 | 6 | GPU 与相关优化 | ✅ | [📖 notes.md](docs/chapter6/c/notes.md) | 📂 `assignment2-systems` |
-| 7 | GPU 高性能编程 | ○ | — | 📂 `assignment2-systems` |
+| 7 | GPU 高性能编程 | ✅ | [📖 notes.md](docs/chapter7/c/notes.md) | 📂 `assignment2-systems` |
 | 8 | 分布式训练 | ○ | — | 📂 `assignment2-systems` |
 | 9 | Scaling Laws | ○ | — | 📂 `assignment3-scaling` |
 | 10 | 推理 | ○ | — | — |
@@ -38,7 +38,7 @@
 | 14 | 可验证奖励的强化学习 | ○ | — | 📂 `assignment5-alignment` |
 | 15 | 扩展内容 | ○ | — | — |
 
-> ✅ 已完成 &nbsp;|&nbsp; ○ 未开始 &nbsp;|&nbsp; 🔨 作业进行中 &nbsp;|&nbsp; **6 / 15 章** &nbsp;|&nbsp; 最后更新：2026-05-08
+> ✅ 已完成 &nbsp;|&nbsp; ○ 未开始 &nbsp;|&nbsp; 🔨 作业进行中 &nbsp;|&nbsp; **7 / 15 章** &nbsp;|&nbsp; 最后更新：2026-05-08
 
 ---
 
@@ -80,6 +80,11 @@ docs/
 │   ├── module3.md            # 低精度计算与算子融合
 │   ├── module4.md            # 内存优化（Tiling、重计算与内存合并）
 │   ├── module5.md            # FlashAttention 与 PagedAttention
+│   └── notes.md              # 📊 学习总结 + QA 归档
+├── chapter7/c/               # 第7章
+│   ├── module1.md            # Benchmark 与 Profiling
+│   ├── module2.md            # Kernel Fusion 与手写 CUDA 内核
+│   ├── module3.md            # Triton 与 torch.compile
 │   └── notes.md              # 📊 学习总结 + QA 归档
 └── ...
 ```
@@ -158,13 +163,24 @@ docs/
 - **掌握扎实**：混合精度训练原理（FP16 vs BF16）、PagedAttention 分页机制、FlashAttention V1 Tiling + Online Softmax、内存合并 burst mode
 - **待加强**：四大提速机制的精确命名、回答时多用具体数字、数学术语精度（"多项式增长"非"指数增长"）
 
+### 第 7 章：GPU 高性能编程
+
+| 模块 | 标题 | 得分 |
+|:----:|------|:----:|
+| 1 | Benchmark 与 Profiling | 21/30 |
+| 2 | Kernel Fusion 与手写 CUDA 内核 | 25/30 |
+| 3 | Triton 与 torch.compile | 21/30 |
+
+- **掌握扎实**：预热与 CUDA 同步、CUDA 坐标计算与越界检查、empty_like 优化、Triton 向量化编程模型
+- **待加强**：算术强度的实际应用（matmul 是高算术强度/计算受限）、HBM 往返的数值精度、"为什么需要手写内核"的场景化展开
+
 ---
 
 ## 🎯 当前建议
 
 1. **开始 Assignment 2（Systems）**：第 6-8 章对应 assignment2-systems，涉及 GPU 性能优化、算子实现、分布式训练
-2. **第 7 章学习**：GPU 高性能编程（CUDA Kernel 编写、Nsight 性能分析）
-3. **巩固练习**：手算 FlashAttention 的 HBM 访问量、实现 Online Softmax 数值验证、对比标准 Attention vs FlashAttention 显存占用
+2. **第 8 章学习**：分布式训练（数据并行、模型并行、ZeRO 优化）
+3. **巩固练习**：用 torch.compile 优化一个自定义算子、尝试用 Triton 重写一个逐元素操作、复习 Roofline 模型计算算术强度
 
 ---
 
