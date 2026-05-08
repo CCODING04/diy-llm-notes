@@ -585,7 +585,7 @@ y[i, k] = x[i, 0] * w[0, k] +
 ```
 这个求和过程包含 D 次乘法（x[i, j] * w[j, k]）和 D - 1 次加法，总共 ≈ 2D 次 FLOPs（因为 D 通常很大，D - 1 ≈ D）
 
-因此，矩阵乘法的计算量：**总 FLOPs** $\approx 2 \times M \times N \times K$
+因此，矩阵乘法的计算量：**总 FLOPs** $\approx 2 \times B \times D \times K$
 
 因为 D × K 正好是这个线性层的参数数量！所以我们可以重写为：$FLOPs = 2 \times 数据量 \times 模型参数量$
 

@@ -2,7 +2,7 @@
 
 
 <div align="center">
-<img width="980" height="470" alt="673cb3c261b9da565f5b896b453808c7" src="images/11.1.png" />
+<img width="980" height="470" alt="673cb3c261b9da565f5b896b453808c7" src="https://github.com/user-attachments/assets/b1a0f623-9aad-497d-a804-d1b5212fa5c6" />
    <p>图11.1 数据工程与大模型训练</p>
  </div>
 在前面的课程中，讨论的是在训练数据已经给定的前提下，如何通过架构设计、优化方法、分词技术和规模扩展来训练更强的模型；而从这一讲开始，我们将转向一个更根本的问题：语言模型究竟应该用什么数据来训练。现实中的LLM研发表明，**数据往往比模型结构本身更关键**——主流基础模型几乎都会公开完整的架构与训练流程，却对训练数据的具体构成保持高度概括，这恰恰说明数据是最难复制、也最具竞争价值的部分。即便在自监督学习成为主流之后，数据工程依然贯穿整个训练过程，数据的收集、清洗、过滤与组合方式直接决定了模型能学到什么、学不到什么；而由于数据具有明显的长尾特性，模型在真实世界中的能力边界，最终由训练数据的覆盖范围所定义。
@@ -83,7 +83,7 @@ BERT的预训练并非简单地“堆数据量”，而是有明确的数据结�
   - **OLMo 2训练数据**
 
 <div align="center">
-<img width="800" height="390" alt="fa56b6a8d8d36c3b4b7b6f5573f88163" src="images/11.2.png" />
+<img width="800" height="390" alt="fa56b6a8d8d36c3b4b7b6f5573f88163" src="https://github.com/user-attachments/assets/26b31982-662a-4806-9287-f50afa600f1d" />
    <p>图11.2 预训练数据来源</p>
  </div>
  
@@ -102,7 +102,7 @@ BERT的预训练并非简单地“堆数据量”，而是有明确的数据结�
   数据占比是占总训练计算量的**5%–10%**，**数据组合**为注入特定领域知识并强化数学能力，这个阶段目的是提升模型在特定领域的推理、数学和专业能力。
   
 <div align="center">
-<img width="730" height="720" alt="5ed44e998e1c88913e321afe9f8a6261" src="images/11.3.png" />
+<img width="730" height="720" alt="5ed44e998e1c88913e321afe9f8a6261" src="https://github.com/user-attachments/assets/87e2d131-71b1-4512-8159-e34ca5e2d401" />
    <p>图11.3 中期训练数据来源</p>
  </div>
  
@@ -113,7 +113,7 @@ BERT的预训练并非简单地“堆数据量”，而是有明确的数据结�
 **3)后训练阶段**
 
 <div align="center">
-  <img width="970" height="800" alt="78f6b31f02eb2e85c70bd75df36b792b" src="images/11.4.png" />
+  <img width="970" height="800" alt="78f6b31f02eb2e85c70bd75df36b792b" src="https://github.com/user-attachments/assets/6721e7d6-4b2e-4b85-bca4-181603df027e" />
    <p>图11.4 后期训练数据来源</p>
  </div>
       该阶段的目标是提升OLMo 2在真实交互场景中的表现，重点包括指令遵循能力、人类偏好对齐能力，以及在数学推理等高可靠性任务上的稳定性与正确性，其采用了**Tülu 3框架**下的多策略对齐训练流程：首先通过SFT（监督微调），使用基于PersonaHub方法生成的规模化合成指令数据约86.6万条，并混合WildChat等真实对话数据，使模型学会规范响应各类指令；随后采用DPO（直接偏好优化），从20个不同模型家族中采样候选回答，并由GPT-4o进行偏好评估，构建UltraFeedback偏好数据集，以对齐模型输出与人类偏好；最后引入RLVR（基于可验证奖励的强化学习），在数学等具有客观正确答案的任务上，使用GSM8K、MATH等数据集进行强化训练，从而显著提升模型推理结果的可靠性。
@@ -387,7 +387,7 @@ CCNet通过语言模型困惑度对文本质量进行自动评估，利用低困
 阈值选择可以采用分位数策略，例如将语料库按困惑度平均分为三部分，仅保留中间部分，以兼顾文本质量和覆盖度。
 
 <div align="center">
-<img width="1100" height="500" alt="769c080727bbc323c6f12105a93a96a3" src="images/11.5.png" />
+<img width="1100" height="500" alt="769c080727bbc323c6f12105a93a96a3" src="https://github.com/user-attachments/assets/06d39c85-2911-48a7-8107-9e07fcde5fc7" />
    <p>图11.6 CCNet工作原理</p>
  </div>
  
@@ -532,7 +532,7 @@ for lang, text in test_data:
 研究各类基于模型的数据筛选算法——即通过训练分类器或其他预测模型来对数据进行智能筛选，展示这些基础方法在不同筛选任务中的广泛应用，并探讨几种高效的策略。
 
 <div align="center">
-<img width="1010" height="540" alt="4c12a385-f0e7-41a6-895b-34c6b5b6c81c" src="images/11.6.png" />
+<img width="1010" height="540" alt="4c12a385-f0e7-41a6-895b-34c6b5b6c81c" src="https://github.com/user-attachments/assets/7659edb9-d93b-4162-863d-e0b5cfa86907" />
    <p>图11.7 原始数据与处理后的数据关系</p>
  </div>
  
@@ -697,7 +697,7 @@ class FastTextClassifier(nn.Module):
 3. **DSIR**
 
 <div align="center">
-<img width="920" height="500" alt="a762d043355f251d4db07645b1a5500a" src="images/11.7.png" />
+<img width="920" height="500" alt="a762d043355f251d4db07645b1a5500a" src="https://github.com/user-attachments/assets/0cdd6689-5747-4a81-bffc-5f3923b346ab" />
    <p>图11.8 DSIR处理</p>
  </div>
  
@@ -797,7 +797,7 @@ if __name__ == "__main__":
 
 
 <div align="center">
-<img width="1300" height="500" alt="1e28c640-6bb5-4b43-a6e4-bfd413cc7bf5" src="images/11.8.png" />
+<img width="1300" height="500" alt="1e28c640-6bb5-4b43-a6e4-bfd413cc7bf5" src="https://github.com/user-attachments/assets/79682269-46cd-476a-9f0f-6ff2e877847d" />
    <p>图11.9 Bloom Filter示意图</p>
  </div>
  
@@ -920,7 +920,7 @@ LSH中band级别的匹配概率，用的不是一个新的相似度，而是整�
 **调整阈值**
 
 <div align="center">
-<img width="980" height="570" alt="e889511fe4daec6ca7e9af605bb311e6" src="images/11.9.png" />
+<img width="980" height="570" alt="e889511fe4daec6ca7e9af605bb311e6" src="https://github.com/user-attachments/assets/ec47a2fb-dc47-4d9c-9598-6b9452921fd9" />
    <p>图11.10 bank与相似度关系</p>
  </div>
  
@@ -1013,7 +1013,7 @@ print("是否成为LSH候选相似对:", is_candidate)
 **数据评估与大模型记忆行为**
 
 <div align="center">
-<img width="700" height="700" alt="e9981713965cccdd76759239af379a5b" src="images/11.10.png" />
+<img width="700" height="700" alt="e9981713965cccdd76759239af379a5b" src="https://github.com/user-attachments/assets/44b41dd6-c0c0-4adf-9c73-368a6e1bb863" />
    <p>图11.11 数据评估大模型记忆行为</p>
  </div>
  

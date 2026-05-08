@@ -21,6 +21,9 @@ coursework/assignment5-alignment/data/
 # 目录元数据
 .DS_Store
 
+# VS Code local history
+.history/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

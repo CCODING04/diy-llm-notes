@@ -181,6 +181,9 @@ def get_memory_usage(device):
         # 获取当前设备已分配的显存(MB)
         mem = torch.cuda.memory_allocated() / 1024 ** 2
         return f"{mem:.2f} MB (GPU)"
+    elif device == "mps":
+        mem = torch.mps.current_allocated_memory() / 1024 ** 2
+        return f"{mem:.2f} MB (MPS)"
     else:
         # 获取当前进程占用的系统内存 (MB)
         process = psutil.Process(os.getpid())
@@ -202,7 +205,12 @@ def main():
     parser.add_argument("--data_path", type=str, default="data.bin")
     args = parser.parse_args()
 
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    if torch.cuda.is_available():
+        device = "cuda"
+    elif torch.backends.mps.is_available():
+        device = "mps"
+    else:
+        device = "cpu"
     print(f"Using Device: {device}")
     os.makedirs(args.checkpoint_dir, exist_ok=True)
 
@@ -294,6 +302,7 @@ def main():
         print(f"\n--- Epoch {epoch} ---")
         print(f"初始内存占用: {get_memory_usage(device)}")
 
+        step_interval_start = time.time()
         for batch_idx, (x, y) in enumerate(train_loader):
             x, y = x.to(device), y.to(device)
 
@@ -321,10 +330,13 @@ def main():
             step_t += 1
 
             if batch_idx % 100 == 0:  # 减少打印频率
+                step_interval_time = time.time() - step_interval_start
                 mem_status = get_memory_usage(device)
                 print(f"Step {batch_idx} | 实时内存: {mem_status}")
                 print(f"Epoch {epoch} | Step {step_t}/{total_steps} | "
-                      f"LR: {lr:.6f} | Train Loss: {loss_val:.4f} | Train PPL: {ppl_val:.4f}")
+                      f"LR: {lr:.6f} | Train Loss: {loss_val:.4f} | Train PPL: {ppl_val:.4f} | "
+                      f"Step Time: {step_interval_time:.2f}s")
+                step_interval_start = time.time()
 
         # Epoch结束统计
         if len(current_epoch_losses) > 0:

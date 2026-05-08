@@ -131,6 +131,14 @@ wandb.init(settings=wandb.Settings(init_timeout=120), mode="offline")
 wandb.init(mode="disabled")  # 完全静默，不产生任何副作用
 ```
 
+#### Q3：在PyCharm中已成功登录，但还是无法使用W&B查看训练过程，如何解决？
+
+**原因**：PyCharm的运行环境与执行`wandb login`的终端环境相互独立，终端中的登录状态无法自动同步到PyCharm中运行的代码。因此，即使终端登录成功，直接在PyCharm中运行脚本也看不到W&B的训练监控链接。
+
+**解决方案**：
+- **方法一**：在PyCharm自带的终端中执行训练脚本（即直接在PyCharm的Terminal中运行`python train.py`），此时终端环境与登录环境一致，可以正常显示W&B链接。
+- **方法二**：换用VSCode，其环境集成方式通常能更好地继承终端中的登录状态。
+
 ---
 
 ## 7. 参考材料

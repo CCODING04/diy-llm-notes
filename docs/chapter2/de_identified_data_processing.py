@@ -8,7 +8,7 @@ from transformers import pipeline
 ner_pipeline = pipeline(
     "ner",
     model="ckiplab/bert-base-chinese-ner",
-    grouped_entities=True  # 将相邻的同类实体片段合并，例如“重”、“庆”合并为“重庆”
+    aggregation_strategy="simple"  # 替换为当前支持的参数
 )
 
 def ner_mask(text: str) -> str:

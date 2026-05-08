@@ -1,5 +1,18 @@
 # 第六章：GPU和GPU相关的优化
 
+
+# 本节学习目标
+
+在进入具体分析之前，我们先明确本节的关注重点。本节将围绕大模型训练与推理所依赖的硬件加速器展开，主要包括：
+
+1. [理解GPU的基本架构、与CPU的差异以及从图形处理器到AI引擎的发展历程](#61-gpu的起源图形处理器)
+2. [掌握GPU的执行模型（SM、Warp、Block、Thread）和分层内存模型（全局内存、L2缓存、共享内存、寄存器等）](#62-gpu-的执行模型-sm流式多处理器)
+3. [学习GPU性能优化的关键技术：避免串行执行、低精度计算、算子融合、重计算、内存合并、分块（Tiling）等](#66-性能优化技术)
+4. [深入理解FlashAttention（V1/V2/V3）和PagedAttention的核心原理及其对长序列训练推理的改进](#67-flash-attention)
+5. [了解国产GPU（华为昇腾、百度昆仑芯、海光、摩尔线程、阿里平头哥等）的产品性能、软件生态与市场现状](#69-国产gpu简介)
+
+完成本章学习后，你将能够：系统理解GPU的硬件架构与执行模型，掌握从内存优化到算子融合的关键性能调优手段，深入领会FlashAttention和PagedAttention如何突破显存与计算瓶颈，并对国产AI芯片的竞争格局与技术路线形成整体认知，从而在实际的大模型训练与推理任务中做出合理的硬件选型与优化决策。
+
 ## 6.1 GPU的起源：图形处理器
 
 在深度学习概念没有火起来之前，GPU在普通人眼中是**游戏显卡**，即图形处理器。下面用一个例子来说明GPU和CPU的区别。
@@ -669,18 +682,19 @@ GPU中的**慢速内存**（即全局内存/DRAM）实际上极其缓慢。为�
 ## 6.7 Flash Attention
 
 <div align="center">
-<img width="1188" height="438" alt="31cfddb1db8291a7a1b870ad48c27ca8" src="images/6-24-注意力计算.png" />
+<img width="1188" height="438" alt="31cfddb1db8291a7a1b870ad48c27ca8" src="https://github.com/user-attachments/assets/947f2883-e686-4b5e-afa5-90f8fa2caa95" />
    <p>图6.24 FlashAttention V1原理图</p>
  </div>
 
-Transformer在长序列上计算和显存复杂度为O(N²)，瓶颈主要来自attention的多次`带宽显存（HBM）`读写访问。许多近似注意力方法通过降低理论复杂度来缓解该问题，但由于GPU kernel调度和内存访问不规则，往往无法实现实际运行时加速。FlashAttention则是**从计算层面通过分块策略**，在`静态随机存取存储器（SRAM）`内完成 $QK^{T}$ 、online softmax与 $V'$ 计算，避免完整attention matrix从而将IO复杂度显著降低。
+Transformer的标准Attention在序列长度为 $N$ 时具有 $O(N^2)$ 的计算与显存复杂度，其性能瓶颈通常来源于对高带宽显存（HBM）的频繁访问，而非纯计算开销。*尽管部分近似注意力方法通过降低理论复杂度来优化性能，但由于GPU上kernel调度开销以及不规则的内存访问模式，这类方法在实践中往往难以实现理想的加速效果。*
 
+FlashAttention并不改变Attention的渐进计算复杂度（FLOPs仍为 $O(N^2)$ ），而是通过分块（tiling）策略，在片上SRAM中完成分块的 $QK^T$ 、online softmax以及与 $V$ 的累积计算，从而避免将完整的Attention matrix显式并写入HBM。该方法通过显著减少HBM访问次数并提高数据复用率，从而提升计算密度，在实际过程中中常将Attention计算从带宽限制转变为更接近 compute-bound，从而在实际GPU上获得显著性能提升。
  
->FlashAttention在数学上与标准attention等价（除浮点误差外），属于精确重排而非近似计算。
+>FlashAttention在数学上与标准attention等价（除浮点误差外），属于精确重排而非近似计算。**这里可以通过运行 👉[FlashAttention.ipynb](https://github.com/1iyouzhen/CS336-Chinese-co-construction/blob/main/docs/chapter6/Flashattention.ipynb)，对比一下FlashAttention和标准Attention的计算结果差异。**
 
 
 <div align="center">
-<img width="1080" height="370" alt="6e33f8876e8290755ea5032ff62608ce" src="images/6-25-FlashAttention的向前传播.png" />
+<img width="1080" height="370" alt="6e33f8876e8290755ea5032ff62608ce" src="https://github.com/user-attachments/assets/bf311647-581d-4608-b357-1dd43d4d62d3" />
    <p>图6.25 左图：前向传播+反向传播的运行时间；右图：注意力内存使用情况。</p>
  </div>
 
@@ -830,15 +844,15 @@ V2 对分块大小进行了精细调整，以匹配 GPU 的 SRAM 容量和寄存
 
 **性能表现**
 
-- **速度提升**：在 A100 上，对于序列长度 512~16k，V2 相比 V1 平均加速 **1.7~2.0 倍**，相比 PyTorch 标准实现加速 **8~10 倍**。
-- **显存占用**：与 V1 保持一致，仍为 $O(N \cdot d)$，但支持的最大序列长度因计算效率提升而有所扩展（单卡 40GB A100 可稳定训练 32k 长度）。
-- **硬件适应性**：V2 的优化策略对 Ampere 及后续架构（如 H100）同样有效，为后续版本（V3）奠定了高效并行的基础。
+- **速度提升**：在A100上，对于序列长度512-16k，V2 相比 V1 平均加速 **1.7~2.0 倍**，相比 PyTorch 标准实现加速 **8~10 倍**。
+- **显存占用**：与V1保持一致，仍为 $O(N \cdot d)$ ，但支持的最大序列长度因计算效率提升而有所扩展（单卡40GB A100可稳定训练32k长度）。
+- **硬件适应性**：V2的优化策略对Ampere及后续架构（如 H100）同样有效，为后续版本（V3）奠定了高效并行的基础。
 
 FlashAttention V2通过提升序列维度的并行度并优化计算调度，在保持V1内存访问高效（IO-aware）特性的前提下，显著提升了Tensor Core的利用率，**从而将注意力计算的整体吞吐推向更高水平**。这一改进使得长上下文Transformer的训练和推理在单卡或有限资源环境下更加高效，成为现代高性能Transformer系统中的重要优化组件，并被包括Llama 2、GPT-4等在内的多种大模型工程实现所采用或借鉴。
 
 ---
 
-### 6.7.4 FlashAttention V3：面向H100的异步与低精度优化
+### 6.7.4 FlashAttention V3：异步与低精度优化
 
 FlashAttention V2在A100等Ampere架构GPU上已接近Tensor Core的理论极限，但 H100（Hopper）架构引入了革命性的新特性：**异步执行模型**（支持计算与数据搬运完全重叠）、**WGMMA（Warpgroup Matrix Multiply-Accumulate）指令**以及**原生FP8支持**。V3正是针对这些硬件特性进行深度优化的产物，其目标是让注意力计算在H100上实现**接近理论峰值的吞吐量**，并充分利用低精度格式带来的算力红利。
 
@@ -895,7 +909,7 @@ H100的第四代Tensor Core在**FP8精度下的理论吞吐量是FP16的两倍**
 
 因此 V3 采用**混合精度策略**就可以提升性能：
 
-矩阵乘法 $QK^T$ 使用 FP8 执行，充分利用 Tensor Core 的高吞吐，**累加器** 保持 FP16 或 BF16 精度，避免 FP8 累加时的精度损失。**Softmax 计算** 提升到 FP32 进行，保证指数运算的数值稳定性（softmax 中的指数和除法极易在低精度下溢出）。同时输出 $PV$ 可选择性转换为 FP8，以适应后续层。
+矩阵乘法 $QK^T$ 使用FP8执行，充分利用Tensor Core的高吞吐，**累加器** 保持FP 16或BF 16精度，避免FP8累加时的精度损失。**Softmax 计算**提升到FP32进行，保证指数运算的数值稳定性（softmax 中的指数和除法极易在低精度下溢出）。同时输出 $PV$ 可选择性转换为FP8，以适应后续层。
 
 此外，V3 实现了 **动态缩放因子** 管理。由于 FP8 的表示范围有限（E4M3 约 -448 到 448，E5M2 约 -57344 到 57344），在计算 $QK^T$ 前需要根据输入范围确定缩放因子，防止溢出。V3 按块（tile）动态计算缩放因子，并在流水线中传递，确保 FP8 计算的精度与 FP16 相当。
 
@@ -914,7 +928,7 @@ H100 的每个 SM 拥有 256KB 共享内存（比 A100 的 192KB 更大），且
 FlashAttention V3是算法与硬件深度协同设计的典范。它通过**异步WGMMA流水线**解耦了数据加载与计算，利用**FP8混合精度**释放了H100的低精度算力，并通过精细的**块布局与寄存器优化**消除了内存瓶颈。这一系列改进使得注意力计算不再是Transformer长上下文扩展的阻碍，而是成为能够充分利用硬件极限的“高性能组件”。V3的诞生，直接支撑了当前工业界100k~1M上下文窗口的大语言模型的工程实现。
 
 
->对于FlashAttention的发展：
+>总结，对于FlashAttention的发展：
 >- V1 解决的是IO瓶颈；
 >- V2 解决的是并行调度与GPU利用率问题；
 >- V3 解决的是计算与访存重叠（SM工作效率）问题。
@@ -924,23 +938,23 @@ FlashAttention V3是算法与硬件深度协同设计的典范。它通过**异�
 
 ---
 
-## 6.8 PageAttention
+## 6.8 PagedAttention
 
 <div align="center">
-<img width="1362" height="276" alt="c8efd766f5ca2a2bee935828649b9b7c" src="images/6-26-两种softmax.png" />
+<img width="1362" height="276" alt="c8efd766f5ca2a2bee935828649b9b7c" src="https://github.com/user-attachments/assets/3ba4f70d-6c25-4c31-b4a2-5de6da8570cd" />
    <p>图6.26 传统KV Cache分布</p>
  </div>
  
 **在传统的KV Cache管理方式中，通常为每个请求序列预先分配一段逻辑上连续的缓存空间，用于存储其历史生成的Key/Value状态**。然而，由于实际生成长度难以精确预测，这种静态预分配策略会带来显存利用率问题。当预留空间大于实际生成长度时，会产生`内部碎片`（internal fragmentation），即已分配但未被使用的显存空间；同时，由于不同请求的生命周期不一致，释放时间存在差异，显存中可能形成多个零散的空闲块，这个时候尽管总空闲容量充足，但由于无法提供足够大的连续缓存块来满足新序列的分配需求，从而产生`外部碎片`（external fragmentation）。
 
 <div align="center">
-<img width="800" height="480" alt="8f656ff9ffcef6e1ab631f81cd99cf21" src="images/6-27-flashAttention的向前传播.png" />
+<img width="800" height="480" alt="8f656ff9ffcef6e1ab631f81cd99cf21" src="https://github.com/user-attachments/assets/61ad87a3-7544-477e-84cc-2c385589f2e0" />
    <p>图6.27 显存占用分析</p>
  </div>
 
-上述碎片问题会显著降低GPU高带宽显存（HBM）的整体利用效率。为**从系统层面缓解这问刚才提到的问题**，根据操作系统分页机制（paging），PageAttention将KV Cache拆分为固定大小的页面（pages），并通过页表进行间接地址映射，使逻辑连续的KV存储不再依赖物理连续内存，从而有效减少碎片并提升显存利用率。
+上述碎片问题会显著降低GPU高带宽显存（HBM）的整体利用效率。为**从系统层面缓解这问刚才提到的问题**，根据操作系统分页机制（paging），PagedAttention将KV Cache拆分为固定大小的页面（pages），并通过页表进行间接地址映射，使逻辑连续的KV存储不再依赖物理连续内存，从而有效减少碎片并提升显存利用率。
 
-### 6.8.1 PageAttention 原理分析
+### 6.8.1 PagedAttention 原理分析
 
 在标准的自回归（AR）推理过程中，**每个新生成的 token 都会产生对应的 K 和 V，并按时间顺序追加至 KV cache**。逻辑顺序严格对应时间顺序，而物理存储顺序则取决于具体的实现策略。为了**保证高效的 GPU 访问与 CUDA kernel 的访存模式（如 memory coalescing）**，传统实现通常将 KV cache 组织为连续内存张量，并依据预设的最大序列长度上界进行显存预分配。然而，**由于不同请求的实际生成长度存在显著差异，且 GPU 显存分配器难以支持低代价的动态扩容与内存重排**，这种基于最大长度的连续预分配策略容易产生内部碎片与外部碎片。
 
@@ -960,7 +974,7 @@ $$
 
 那么问题就显现出来了。**内部碎片**体现在：每个请求都提前占用了 2048 长度的连续物理空间，但实际使用量远小于此，造成大量剩余空间被浪费（例如请求 C 浪费了 1700 多个 token 的容量）。**外部碎片**则表现为：显存中散落着许多小块空闲空间，却**没有一整块连续区域能够被利用**，这在 GPU 上尤为严重，导致碎片化的空闲内存无法再分配给新的请求。
 
-vLLM 提出的 **PageAttention** 正是为了解决上述问题——它将“静态连续存储”转变为“动态分页管理”。 **核心思路是将 KV cache 切分为固定大小的块（Page）** ，例如每个 Page 包含 16 个 token 的 KV 存储。通过一个页表（Block Table），PageAttention **将逻辑上连续的 token 对应的 KV 映射到物理上未必连续的存储块中，从而最大化利用显存空间**。例如，三个逻辑连续的 token 段（1–16、17–32、33–48）可以通过页表分别映射到物理地址的 Block7、Block2 和 Block19，物理上不必相邻。
+vLLM 提出的 **PagedAttention** 正是为了解决上述问题——它将“静态连续存储”转变为“动态分页管理”。 **核心思路是将 KV cache 切分为固定大小的块（Page）** ，例如每个 Page 包含 16 个 token 的 KV 存储。通过一个页表（Block Table），PagedAttention **将逻辑上连续的 token 对应的 KV 映射到物理上未必连续的存储块中，从而最大化利用显存空间**。例如，三个逻辑连续的 token 段（1–16、17–32、33–48）可以通过页表分别映射到物理地址的 Block7、Block2 和 Block19，物理上不必相邻。
 
 **为什么这样就不需要连续的物理空间呢**？因为在 Attention 计算时，系统会依据页表逐块读取 KV：**每处理一个 block，先查页表找到对应的物理 block，再执行读取操作**。只要页表维护了正确的映射关系，即使物理地址不连续，读取的顺序逻辑依然是正确的。整个流程可以简化为：
 
@@ -985,7 +999,7 @@ PagedAttention 将显存管理从**以请求为单位的静态圈地转变为以
 
 因此，传统 AR 的浪费规模为 \(O(\text{max\_seq\_len})\)，而 PagedAttention 的浪费仅控制在 \(O(\text{page\_size})\) 级别，显存利用率与并发能力由此得到显著提升。
 
-总结来看，PageAttention 的工作原理可以概括为：
+总结来看，PagedAttention 的工作原理可以概括为：
 
 ```
 虚拟地址 -> 页表 -> 物理地址
@@ -997,17 +1011,17 @@ PagedAttention 将显存管理从**以请求为单位的静态圈地转变为以
 请求 ID + Token 偏移量 -> 逻辑块索引 -> Block Table 检索 -> 物理内存基址 -> 偏移读取
 ```
 
-### 6.8.2 FlashAttention 与 PageAttention 的对比
+### 6.8.2 FlashAttention 与 PagedAttention 的对比
 
-尽管 PageAttention 与 FlashAttention 在表面上都致力于提升大模型的推理性能，但二者的优化维度有着本质上的不同。
+尽管 PagedAttention 与 FlashAttention 在表面上都致力于提升大模型的推理性能，但二者的优化维度有着本质上的不同。
 
 **FlashAttention 主要聚焦于单次前向计算中的 IO 复杂度**，属于算子级的微观优化。它通过分块计算（tiling）与在线 Softmax（log-sum-exp streaming）技术，避免了显式构建完整的 \(QK^T\) 中间矩阵，从而显著减少 HBM 与 SRAM 之间的数据往返次数，降低内存带宽压力与访问延迟。简单来说，FlashAttention 解决的是 **“算得更快”** 的问题。
 
-**PageAttention 则着眼于整个生成生命周期中的显存管理效率**，属于系统级的宏观设计。它并不改变 Attention 的数学计算公式，而是将 KV Cache 组织为固定大小的物理块（page），并通过逻辑 block table 实现逻辑顺序与物理顺序的解耦。这种分页结构有效缓解了显存碎片问题，支持动态批处理与长上下文推理，从而提升显存利用率与并发吞吐能力。PageAttention 解决的是 **“存得更高效”** 的问题。
+**PagedAttention 则着眼于整个生成生命周期中的显存管理效率**，属于系统级的宏观设计。它并不改变 Attention 的数学计算公式，而是将 KV Cache 组织为固定大小的物理块（page），并通过逻辑 block table 实现逻辑顺序与物理顺序的解耦。这种分页结构有效缓解了显存碎片问题，支持动态批处理与长上下文推理，从而提升显存利用率与并发吞吐能力。PagedAttention 解决的是 **“存得更高效”** 的问题。
 
-从几个关键维度来看，二者的差异更为清晰。在优化目标上，FlashAttention **专注于单次 forward 的 IO 复杂度**，而 PageAttention **致力于整个生成生命周期的内存管理**。在时间尺度上，前者是 micro-level（算子级）的优化，后者是 macro-level（系统级）的优化。在影响对象上，FlashAttention 作用于 attention kernel 本身，PageAttention 则管理 KV Cache 的生命周期。此外，FlashAttention 对训练和推理均有影响，而 PageAttention 基本仅适用于推理场景；FlashAttention 不依赖 decoder-only 架构，PageAttention 则对此有强依赖。
+从几个关键维度来看，二者的差异更为清晰。在优化目标上，FlashAttention **专注于单次 forward 的 IO 复杂度**，而 PagedAttention **致力于整个生成生命周期的内存管理**。在时间尺度上，前者是 micro-level（算子级）的优化，后者是 macro-level（系统级）的优化。在影响对象上，FlashAttention 作用于 attention kernel 本身，PagedAttention 则管理 KV Cache 的生命周期。此外，FlashAttention 对训练和推理均有影响，而 PagedAttention 基本仅适用于推理场景；FlashAttention 不依赖 decoder-only 架构，PagedAttention 则对此有强依赖。
 
-在实际的推理框架（如 vLLM）中，二者通常**协同使用**，以**同时优化单请求延迟与整体吞吐量**。但值得注意的是，PageAttention 通过间接寻址引入了 KV cache 的非连续物理布局，这可能破坏 FlashAttention 对连续内存访问与 memory coalescing 的假设。因此，在联合使用时，FlashAttention kernel 通常需要以 page 为最小 streaming 计算单元进行适配，或者确保 block_size 与 tile_size 相近，以维持共享内存利用率和访存效率。
+在实际的推理框架（如 vLLM）中，二者通常**协同使用**，以**同时优化单请求延迟与整体吞吐量**。但值得注意的是，PagedAttention 通过间接寻址引入了 KV cache 的非连续物理布局，这可能破坏 FlashAttention 对连续内存访问与 memory coalescing 的假设。因此，在联合使用时，FlashAttention kernel 通常需要以 page 为最小 streaming 计算单元进行适配，或者确保 block_size 与 tile_size 相近，以维持共享内存利用率和访存效率。
 
 ---
 
@@ -1130,7 +1144,11 @@ PagedAttention 将显存管理从**以请求为单位的静态圈地转变为以
 
 在一些算力平台如 AutoDL 上，用户可以租到 910B 搭配鲲鹏 920 的算力实例。根据 AutoDL 平台的性能实测数据（见下图），昇腾 910B 在实际应用中的表现可直观对比英伟达 A100。
 
+昇腾910B实测数据：
+
 <img src="https://raw.githubusercontent.com/datawhalechina/diy-llm/main/docs/chapter6/images/6-29-昇腾910B实测数据.png" width="800" alt="6-29-昇腾910B实测数据">
+
+英伟达A100实测数据：
 
 <img src="https://raw.githubusercontent.com/datawhalechina/diy-llm/main/docs/chapter6/images/6-30-英伟达A100实测数据.png" width="800" alt="6-30-英伟达A100实测数据.png">
 
@@ -1153,5 +1171,5 @@ https://github.com/datawhalechina/self-llm/blob/master/support_model_Ascend.md)�
 # 参考资料
 
 - [FlashAttention原理](https://arxiv.org/pdf/2205.14135)
-- [PageAttention原理](https://arxiv.org/pdf/2309.06180)
+- [PagedAttention原理](https://arxiv.org/pdf/2309.06180)
   
