@@ -12,7 +12,7 @@
 
 基于 [datawhalechina/diy-llm](https://github.com/datawhalechina/diy-llm) 教程的交互式学习记录
 
-[![进度](https://img.shields.io/badge/进度-4%2F15%20章-blue)](https://github.com/datawhalechina/diy-llm) [![课程](https://img.shields.io/badge/课程-CS336-green)](https://stanford-cs336.github.io/spring2025/)
+[![进度](https://img.shields.io/badge/进度-6%2F15%20章-blue)](https://github.com/datawhalechina/diy-llm) [![课程](https://img.shields.io/badge/课程-CS336-green)](https://stanford-cs336.github.io/spring2025/)
 
 </div>
 
@@ -26,8 +26,8 @@
 | 2 | 分词器 | ✅ | [📖 notes.md](docs/chapter2/c/notes.md) | ✅ `assignment1-basics` |
 | 3 | PyTorch 与资源核算 | ✅ | [📖 notes.md](docs/chapter3/c/notes.md) | ✅ `assignment1-basics` |
 | 4 | 语言模型架构与训练细节 | ✅ | [📖 notes.md](docs/chapter4/c/notes.md) | 📂 `assignment1-basics` |
-| 5 | 混合专家模型（MoE） | ○ | — | — |
-| 6 | GPU 与相关优化 | ○ | — | 📂 `assignment2-systems` |
+| 5 | 混合专家模型（MoE） | ✅ | [📖 notes.md](docs/chapter5/c/notes.md) | — |
+| 6 | GPU 与相关优化 | ✅ | [📖 notes.md](docs/chapter6/c/notes.md) | 📂 `assignment2-systems` |
 | 7 | GPU 高性能编程 | ○ | — | 📂 `assignment2-systems` |
 | 8 | 分布式训练 | ○ | — | 📂 `assignment2-systems` |
 | 9 | Scaling Laws | ○ | — | 📂 `assignment3-scaling` |
@@ -38,7 +38,7 @@
 | 14 | 可验证奖励的强化学习 | ○ | — | 📂 `assignment5-alignment` |
 | 15 | 扩展内容 | ○ | — | — |
 
-> ✅ 已完成 &nbsp;|&nbsp; ○ 未开始 &nbsp;|&nbsp; 🔨 作业进行中 &nbsp;|&nbsp; **4 / 15 章** &nbsp;|&nbsp; 最后更新：2026-04-21
+> ✅ 已完成 &nbsp;|&nbsp; ○ 未开始 &nbsp;|&nbsp; 🔨 作业进行中 &nbsp;|&nbsp; **6 / 15 章** &nbsp;|&nbsp; 最后更新：2026-05-08
 
 ---
 
@@ -67,6 +67,19 @@ docs/
 │   ├── module2.md            # 现代变体（归一化与激活函数）
 │   ├── module3.md            # 现代变体（位置编码与注意力机制）
 │   ├── module4.md            # 超参数设计与训练稳定性
+│   └── notes.md              # 📊 学习总结 + QA 归档
+├── chapter5/c/               # 第5章
+│   ├── module1.md            # MoE 核心概念与路由机制
+│   ├── module2.md            # 容量控制与 Token 丢弃
+│   ├── module3.md            # 负载均衡与辅助损失
+│   ├── module4.md            # DeepSeekMoE 与共享专家
+│   └── notes.md              # 📊 学习总结 + QA 归档
+├── chapter6/c/               # 第6章
+│   ├── module1.md            # GPU 架构与内存层次
+│   ├── module2.md            # 执行模型与性能扩展
+│   ├── module3.md            # 低精度计算与算子融合
+│   ├── module4.md            # 内存优化（Tiling、重计算与内存合并）
+│   ├── module5.md            # FlashAttention 与 PagedAttention
 │   └── notes.md              # 📊 学习总结 + QA 归档
 └── ...
 ```
@@ -120,13 +133,38 @@ docs/
 - **掌握扎实**：Transformer 四大核心组件、RoPE 数学推导、MQA/GQA/MLA 对比、KV Cache 原理
 - **待加强**：正弦编码 vs RoPE 精确区别、RMSNorm 去掉的具体内容、MLA 缓存细节、权重衰减与 lr 正相关关系、SwiGLU 参数量计算
 
+### 第 5 章：混合专家模型（MoE）
+
+| 模块 | 标题 | 得分 |
+|:----:|------|:----:|
+| 1 | MoE 核心概念与路由机制 | 21/30 |
+| 2 | 容量控制与 Token 丢弃 | 17/30 |
+| 3 | 负载均衡与辅助损失 | 20/30 |
+| 4 | DeepSeekMoE 与共享专家 | 20/30 |
+
+- **掌握扎实**：MoE 路由机制（Top-K 路由、哈希路由、LSH 分桶）、容量控制与 Token 丢弃的残差保护、DeepSeekMoE 细粒度分割的组合空间计算、共享专家并行架构
+- **待加强**：概念辨析精度（Z-loss vs Auxiliary Loss、FLOPs vs 显存）、数据流追踪、数值证明习惯
+
+### 第 6 章：GPU 与相关优化
+
+| 模块 | 标题 | 得分 |
+|:----:|------|:----:|
+| 1 | GPU 架构与内存层次 | — (临时 QA) |
+| 2 | 执行模型与性能扩展 | 18/30 |
+| 3 | 低精度计算与算子融合 | 21/30 |
+| 4 | 内存优化（Tiling、重计算与内存合并） | 20/30 |
+| 5 | FlashAttention 与 PagedAttention | 23/30 |
+
+- **掌握扎实**：混合精度训练原理（FP16 vs BF16）、PagedAttention 分页机制、FlashAttention V1 Tiling + Online Softmax、内存合并 burst mode
+- **待加强**：四大提速机制的精确命名、回答时多用具体数字、数学术语精度（"多项式增长"非"指数增长"）
+
 ---
 
 ## 🎯 当前建议
 
-1. **开始第 5 章**：混合专家模型（MoE），涉及稀疏激活与路由机制
-2. **Assignment 1 补充**：第 4 章对应 assignment1-basics 的 Transformer 实现部分，建议复习
-3. **巩固练习**：手算 FFN 参数量（ReLU vs SwiGLU）、对比正弦编码和 RoPE 的注意力分数矩阵
+1. **开始 Assignment 2（Systems）**：第 6-8 章对应 assignment2-systems，涉及 GPU 性能优化、算子实现、分布式训练
+2. **第 7 章学习**：GPU 高性能编程（CUDA Kernel 编写、Nsight 性能分析）
+3. **巩固练习**：手算 FlashAttention 的 HBM 访问量、实现 Online Softmax 数值验证、对比标准 Attention vs FlashAttention 显存占用
 
 ---
 
