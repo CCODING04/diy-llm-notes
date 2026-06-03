@@ -2,7 +2,7 @@
 name: repo-tutor
 description: 针对 diy-llm 仓库的交互式学习导师，按章节分模块生成增强教学文档，支持问答批改和作业提醒
 trigger: 学习|repo tutor|/repo-tutor|开始学习|继续学习|第.*章
-allowed-tools: Bash(git*), Read, Grep, Glob, Write, Edit, WebSearch, mcp__MiniMax__web_search, mcp__web-search-prime__web_search_prime, mcp__context7__resolve-library-id, mcp__context7__query-docs, mcp__exa__web_search_exa, mcp__exa__web_fetch_exa, mcp__tavily__tavily_search, mcp__tavily__tavily_extract, mcp__tavily__tavily_research
+allowed-tools: Bash(git*), Read, Grep, Glob, Write, Edit, WebSearch, mcp__MiniMax__web_search, mcp__web-search-prime__web_search_prime, mcp__plugin_context7_context7__resolve-library-id, mcp__plugin_context7_context7__query-docs
 ---
 
 # 仓库导师 Skill（diy-llm 专属版）
@@ -10,8 +10,8 @@ allowed-tools: Bash(git*), Read, Grep, Glob, Write, Edit, WebSearch, mcp__MiniMa
 ## 目录约定（必读）
 
 教学笔记保存路径：`docs/chapter{N}/c/module{M}.md`
-进度文件路径：`.claude/tutor-progress.json`
-详见仓库根目录 `CLAUDE.md`。
+进度文件路径：`.Codex/tutor-progress.json`
+详见仓库根目录 `AGENTS.md`。
 
 ---
 
@@ -38,9 +38,9 @@ allowed-tools: Bash(git*), Read, Grep, Glob, Write, Edit, WebSearch, mcp__MiniMa
 
 ### 第一步：初始化
 
-1. 读取进度文件 `.claude/tutor-progress.json`（不存在则创建）
+1. 读取进度文件 `.Codex/tutor-progress.json`（不存在则创建）
 2. 读取 `docs/_sidebar.md` 获取完整章节列表
-3. 读取 `CLAUDE.md` 获取章节-作业映射
+3. 读取 `AGENTS.md` 获取章节-作业映射
 4. 展示学习路线图和当前进度，询问用户从哪章开始
 
 **进度文件格式**：
@@ -96,35 +96,24 @@ allowed-tools: Bash(git*), Read, Grep, Glob, Write, Edit, WebSearch, mcp__MiniMa
    - 重点提取：① .md 中未提及的公式/数据 ② 消融实验结论 ③ 各模型参数对比表 ④ 训练稳定性图表
    - PDF 补充内容标注来源为：`> 💡 **补充（PDF 课件 / [来源名]）**：`
 
-2. **内容交叉验证**（每个模块生成前执行一次，所有搜索工具**必须多源交叉验证**）
+2. **内容交叉验证**（每个模块生成前执行一次，Context7 和 Web Search **两者都必须执行**）
 
-   **① Context7 查询（优先执行，必须执行，权威 API/代码参考）**
+   **① Context7 查询（优先执行，必须执行，数据更新且可靠）**
    - 识别章节涉及的主要开源库/框架（如 `tokenizers`、`torch`、`wandb`、`transformers`）
    - 用 `resolve-library-id` 定位库 ID，再用 `query-docs` 查询与本章核心概念相关的文档和代码示例
-   - Context7 补充内容优先级最高，作为教学内容的权威参考
+   - Context7 补充内容优先级高于 Web Search，作为教学内容的权威参考
 
-   **② 多源 Web Search（必须执行，至少使用 2 个搜索 MCP，交叉验证结果）**
-
-   可用搜索工具（按优先级排列）：
-   - `mcp__exa__web_search_exa` — Exa 搜索，语义化搜索，适合找论文/博客/技术文章
-   - `mcp__exa__web_fetch_exa` — Exa 网页读取，获取搜索结果的全文内容
-   - `mcp__tavily__tavily_search` — Tavily 搜索，适合快速获取摘要
-   - `mcp__tavily__tavily_research` — Tavily 深度研究，适合复杂技术问题的多轮搜索
-   - `mcp__tavily__tavily_extract` — Tavily 网页提取，获取指定 URL 的全文
-   - `mcp__web-search-prime__web_search_prime` — Web Search Prime，中文搜索效果好
-   - `WebSearch` — Claude 内置搜索
-
-   搜索策略：
-   - **同一查询至少用 2 个不同搜索工具执行**，对比结果一致性
-   - 关键数据（公式参数、实验结论、D/N 比例等）必须**至少 2 个来源确认**
-   - 如果不同来源结论矛盾，优先级：原始论文 > Context7 > Exa/Tavily > 其他搜索
+   **② Web Search 搜索（必须执行，补充最新进展）**
+   - 使用 `mcp__MiniMax__web_search` 或 `mcp__web-search-prime__web_search_prime` 搜索
+   - 搜索目标：该章核心技术的最新论文/进展、工程实践经验、与课程内容的对比分析
    - 典型搜索词示例：`"BPE tokenizer 2024 best practices"`、`"Flash Attention vs standard attention benchmark"`
+   - Web Search 补充内容侧重"最新动态"和"实践视角"，与 Context7 互补
    - 如果搜索内容有歧义或者不相关，需进行筛选和验证，确保质量
 
    **③ 标注来源**
    - Context7 补充内容标注：`> 💡 **补充（Context7 / [库名]）**：`
-   - Web Search 补充内容标注：`> 🌐 **补充（Web Search / [工具名]）**：`
-   - 所有补充均与原始课程内容区隔，不混淆
+   - Web Search 补充内容标注：`> 🌐 **补充（Web Search）**：`
+   - 两类补充均与原始课程内容区隔，不混淆
 
 3. **模块划分原则**
    - 根据 .md 主文档的一级/二级标题 + PDF 补充内容综合划分
@@ -344,7 +333,7 @@ allowed-tools: Bash(git*), Read, Grep, Glob, Write, Edit, WebSearch, mcp__MiniMa
 3. 在 notes.md **开头**添加学习总结：
    - 根据所有 QA 的作答情况和批改评分，总结本章掌握扎实的知识点
    - 指出需要加强的薄弱环节，给出具体的课下学习建议
-4. 查询 `CLAUDE.md` 中的章节-作业映射
+4. 查询 `AGENTS.md` 中的章节-作业映射
 5. 若该章有对应 coursework 作业，**提醒作业**：
 
 ```
@@ -366,7 +355,7 @@ allowed-tools: Bash(git*), Read, Grep, Glob, Write, Edit, WebSearch, mcp__MiniMa
 
 ### 进度管理
 
-每次模块生成/完成/批改后，同步更新 `.claude/tutor-progress.json`：
+每次模块生成/完成/批改后，同步更新 `.Codex/tutor-progress.json`：
 
 ```json
 {
@@ -394,11 +383,9 @@ allowed-tools: Bash(git*), Read, Grep, Glob, Write, Edit, WebSearch, mcp__MiniMa
   - 与其他概念容易混淆（需要在教程中主动对比区分）
   - 原始资料中只是表格一行或一句话，但承载了重要的工程或理论意义
 - **数值推演**：公式出现时，必须紧跟一个**带具体数值的完整计算过程**。例如 Auxiliary Loss 的 L_aux = α × N × Σ(fᵢ×Pᵢ)，需要用 4 专家、6 token 的具体数据走完整个计算，从 softmax 输出到最终 loss 值
-- **交叉验证**：每章**必须同时执行** Context7 查询和多源 Web Search（至少 2 个搜索 MCP）
+- **交叉验证**：每章**必须同时执行** Context7 查询和 Web Search，两者缺一不可
   - Context7 补充标注 `💡 **补充（Context7）**`，侧重 API 用法和代码示例
-  - Web Search 补充标注 `🌐 **补充（Web Search / [工具名]）**`，侧重最新进展和实践经验
-  - 关键数据（公式参数、实验结论、比例数值等）必须**至少 2 个来源确认**
-  - 来源矛盾时优先级：原始论文 > Context7 > Exa/Tavily > 其他搜索
+  - Web Search 补充标注 `🌐 **补充（Web Search）**`，侧重最新进展和实践经验
   - 两类补充均与原始课程内容区隔，不混淆
 - **问题质量**：问题须有明确答案，覆盖本模块核心知识点，难度适中
 - **篇幅控制**：每个模块文档建议 500-1500 字，过长则考虑是否需要再拆模块。此限制不包含数值推演和代码片段——这两者是必要的深度内容，不应为控制篇幅而省略
@@ -472,58 +459,6 @@ allowed-tools: Bash(git*), Read, Grep, Glob, Write, Edit, WebSearch, mcp__MiniMa
 - 同步 1F1B（PipeDream-Flush / Megatron-LM）vs 异步 PipeDream（有权重陈旧问题）
 - DeepSpeed ZeRO-3 vs PyTorch FSDP（同一思想的不同实现）
 - NCCL Ring vs NCCL Tree（不同算法，适用场景不同）
-
-**11. 同名异义术语必须显式对比**
-
-当模块引入一个与前文同名的术语但含义不同时，必须在首次出现时用对比表说明差异：
-- 普通"哈希"（SHA256，求"不同"）vs MinHash（求"相似"）vs LSH（求"碰撞"）——三种哈希，三种设计目标
-- FastText 的 Embedding（哈希下标→学习向量）vs Transformer 的 Embedding（token id→学习向量）
-- 规则：对比表至少包含 **输入、输出、设计目标、典型用途** 四列
-- 反面示例：文档说了"每个哈希值 → 查 Embedding 表"但没解释哈希值和表的关联——哈希值就是矩阵的行下标，表是训练出来的；读者必然追问"怎么查的"
-
-**12. 管道步骤必须回答"怎么做到的"，而不只是"做了什么"**
-
-数据流图中的每个箭头/步骤，文档中必须至少有一句解释**机制**（而非仅命名步骤）：
-- 反面示例：`每个哈希值 → 查 Embedding 表 → 得到向量`
-- 正面示例：`hash 取模后作为 Embedding 矩阵的行下标直接索引，矩阵由训练学习得到`
-- 判断标准：如果读者看完后能问出"怎么做到的？"，说明机制解释不够，必须补上
-- 典型高频漏洞：查表（怎么查）、映射（怎么映射）、压缩（靠什么压缩）、分桶（桶编号怎么来的）
-
-**13. 复杂度/概率声称必须附带推导或直觉展开**
-
-当文档中声称某个算法的复杂度（如 O(N)）、捕获率（如 ~95%）、假阳性率（如 1%）等性能指标时：
-- 必须给出**数量级推导**（三层以内，不需要严格数学证明，但要让人能看到数字怎么来的）
-- 必须解释**核心假设**（如 O(N) 依赖于"近重复稀疏"假设）
-- 如果存在**退化条件**（如超大重复簇导致复杂度退化到 O(N)~O(N²) 之间），必须一并说明
-- 反面示例：文档说"总复杂度约 O(N)！"但没解释 N 怎么归纳出来的，读者追问后才补上 O(N²)→O(N) 转化逻辑和退化条件
-
-**14. 数值推演是教学手段，不是评分硬标准**
-
-此规则区分**生成阶段**和**批改阶段**的不同要求：
-
-生成阶段（写模块文档）：公式出现时应紧跟带具体数值的计算推演（规则保留，同第 5 条"数值推演"）。
-
-批改阶段（`提交作业` 后评分）：
-- 逻辑链完整 + 关键因果判断正确 → 不应因"没写具体数字"而额外扣分
-- 数值推演仅用于**纠正错误数值**时扣分（如误用 H100 带宽 3.5 TB/s 而非 3.35 TB/s，或公式写错导致数值不对）
-- 评分以**因果推理链路的完整性和准确性**为核心，具体数字为辅助
-- 反面教训（Chapter 11 Module 1）：用户 Q1 答出了"数据少→PPL 高→共享阈值错误过滤→恶性循环→泛化能力受损"这条完整因果链，只因为没写"Wikipedia 英语 600 万 vs 小众语言几万"的具体数字被扣分，用户提出反对后调整为 8 分。因果链路完整时不应以"缺数值推演"为由扣分
-
-**15. 参考代码必须标注"三栏差异表"**
-
-插入的参考代码（无论是课程源码还是外部补充），必须附带一个表格标注代码与工业实现的差异：
-
-| 代码中做了什么 | 简化了什么 | 工业部署怎么做 |
-|--------------|-----------|--------------|
-| 用 MD5 做哈希 | 非加密场景不需要密码学安全 | murmurhash3 / xxhash，快 20-50 倍 |
-| `f"{i}_{item}"` 生成多个哈希 | 多个独立哈希函数简化为单哈希+种子 | 使用 double-hashing 或真正独立的哈希函数族 |
-| 直接两两比较签名 | 省略 LSH 分桶让代码更短、逻辑更清晰 | LSH 分桶，只比较桶内文档，复杂度和复杂度差两个数量级 |
-| `num_buckets=5`（FastText） | 5 个桶演示原理 | 200 万~1 亿个桶，降低碰撞率 |
-| `nn.Embedding` 随机初始化 | — | 同样随机初始化 + 反向传播学习（这点代码和工业一致） |
-
-此规则确保学习者不会被代码误导为"这就是生产级实现"，同时明确每个简化点的真实做法。
-
-反面教训（Chapter 11 Module 3）：插入的 MinHash+LSH 参考源码用 O(N²) 两两比较，最初缺少差异说明，后续补上了要点说明表——如果 Skill 有此规则，首次生成时就会带上。
 
 ---
 
@@ -635,7 +570,7 @@ homework/
 
 #### Step 5：进度同步
 
-1. 更新 `.claude/tutor-progress.json` 中的作业进度
+1. 更新 `.Codex/tutor-progress.json` 中的作业进度
 2. 更新仓库根目录 `README.md` 的进度表，标记作业状态
 3. 如果用户选择跳过作业，在进度中标记为 `skipped`，下次继续学习时提醒
 
