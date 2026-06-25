@@ -61,8 +61,7 @@ python <skill-dir>/scripts/read_image.py <image_path> [options]
 |-------|-------|
 | `mimo-v2.5` | Default. Native multimodal, 1M context, 32K max output |
 | `mimo-v2.5-pro` | Enhanced reasoning, 131K max output |
-| `mimo-v2-omni` | Previous-gen multimodal |
-| `mimo-v2-flash` | Fast/lightweight, 65K max output |
+
 
 All support image input. Audio/video/thinking features vary by model — check the
 [docs](https://platform.xiaomimimo.com/docs/zh-CN/api/chat/openai-api) for details.

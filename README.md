@@ -12,7 +12,7 @@
 
 基于 [datawhalechina/diy-llm](https://github.com/datawhalechina/diy-llm) 教程的交互式学习记录
 
-[![进度](https://img.shields.io/badge/进度-7%2F15%20章-blue)](https://github.com/datawhalechina/diy-llm) [![课程](https://img.shields.io/badge/课程-CS336-green)](https://stanford-cs336.github.io/spring2025/)
+[![进度](https://img.shields.io/badge/进度-15%2F15%20章-brightgreen)](https://github.com/datawhalechina/diy-llm) [![课程](https://img.shields.io/badge/课程-CS336-green)](https://stanford-cs336.github.io/spring2025/)
 
 </div>
 
@@ -29,16 +29,17 @@
 | 5 | 混合专家模型（MoE） | ✅ | [📖 notes.md](docs/chapter5/c/notes.md) | — |
 | 6 | GPU 与相关优化 | ✅ | [📖 notes.md](docs/chapter6/c/notes.md) | 📂 `assignment2-systems` |
 | 7 | GPU 高性能编程 | ✅ | [📖 notes.md](docs/chapter7/c/notes.md) | 📂 `assignment2-systems` |
-| 8 | 分布式训练 | ○ | — | 📂 `assignment2-systems` |
-| 9 | Scaling Laws | ○ | — | 📂 `assignment3-scaling` |
-| 10 | 推理 | ○ | — | — |
-| 11 | 数据工程 | ○ | — | 📂 `assignment4-data` |
-| 12 | 评估与基准测试 | ○ | — | 📂 `assignment6-evaluation` |
-| 13 | 大模型基本训练流程 | ○ | — | 📂 `assignment5-alignment` |
-| 14 | 可验证奖励的强化学习 | ○ | — | 📂 `assignment5-alignment` |
-| 15 | 扩展内容 | ○ | — | — |
+| 8 | 分布式训练 | ✅ | [📖 notes.md](docs/chapter8/c/notes.md) | 📂 `assignment2-systems` |
+| 9 | Scaling Laws | ✅ | [📖 notes.md](docs/chapter9/c/notes.md) | 📂 `assignment3-scaling` |
+| 10 | 推理 | ✅ | [📖 notes.md](docs/chapter10/c/notes.md) | — |
+| 11 | 数据工程 | ✅ | [📖 notes.md](docs/chapter11/c/notes.md) | 📂 `assignment4-data` |
+| 12 | 评估与基准测试 | ✅ | [📖 notes.md](docs/chapter12/c/notes.md) | 📂 `assignment6-evaluation` |
+| 13 | 大模型基本训练流程 | ✅ | [📖 notes.md](docs/chapter13/c/notes.md) | 📂 `assignment5-alignment` |
+| 14 | 可验证奖励的强化学习 | ✅ | [📖 notes.md](docs/chapter14/c/notes.md) | 📂 `assignment5-alignment` |
+| 15 | 扩展内容 | ✅ | [📖 notes.md](docs/chapter15/c/notes.md) | — |
+| ✨ | GLM-5.2 全景分析（附加） | 📖 | [📖 module5_extra.md](docs/chapter14/c/module5_extra.md) | — |
 
-> ✅ 已完成 &nbsp;|&nbsp; ○ 未开始 &nbsp;|&nbsp; 🔨 作业进行中 &nbsp;|&nbsp; **7 / 15 章** &nbsp;|&nbsp; 最后更新：2026-05-08
+> ✅ 已完成 &nbsp;|&nbsp; ○ 未开始 &nbsp;|&nbsp; 🔨 作业进行中 &nbsp;|&nbsp; **15 / 15 章** &nbsp;|&nbsp; 最后更新：2026-06-25
 
 ---
 
@@ -86,7 +87,56 @@ docs/
 │   ├── module2.md            # Kernel Fusion 与手写 CUDA 内核
 │   ├── module3.md            # Triton 与 torch.compile
 │   └── notes.md              # 📊 学习总结 + QA 归档
-└── ...
+├── chapter8/c/               # 第8章
+│   ├── module1.md            # 数据并行（DP/DDP/FSDP）
+│   ├── module2.md            # 模型并行（Pipeline/1F1B/GPipe）
+│   ├── module3.md            # ZeRO 优化与 3D 并行
+│   ├── module4.md            # 通信基础与 NCCL
+│   ├── module5.md            # 混合精度训练
+│   └── notes.md              # 📊 学习总结 + QA 归档
+├── chapter9/c/               # 第9章
+│   ├── module1.md            # Scaling Laws 核心发现
+│   ├── module2.md            # Chinchilla 最优计算分配
+│   ├── module3.md            # 涌现能力与超越 Chinchilla
+│   ├── module4.md            # 数据约束与重复
+│   └── notes.md              # 📊 学习总结 + QA 归档
+├── chapter10/c/              # 第10章
+│   ├── module1.md            # LLM 推理基础
+│   ├── module2.md            # 投机解码
+│   ├── module3.md            # KV Cache 与量化推理
+│   └── notes.md              # 📊 学习总结 + QA 归档
+├── chapter11/c/              # 第11章
+│   ├── module1.md            # 数据质量与过滤
+│   ├── module2.md            # 数据去重（MinHash/LSH）
+│   ├── module3.md            # 数据配比与课程学习
+│   ├── module4.md            # 合成数据生成
+│   └── notes.md              # 📊 学习总结 + QA 归档
+├── chapter12/c/              # 第12章
+│   ├── module1.md            # 评估方法论
+│   ├── module2.md            # 标准 Benchmark
+│   ├── module3.md            # LLM-as-Judge
+│   ├── module4.md            # 污染与泄漏
+│   ├── module5.md            # 红队测试
+│   └── notes.md              # 📊 学习总结 + QA 归档
+├── chapter13/c/              # 第13章
+│   ├── module1.md            # 预训练数据与基础设施
+│   ├── module2.md            # 数据选择与课程学习
+│   ├── module3.md            # SFT 与指令微调
+│   ├── module4.md            # RLHF 与 PPO
+│   ├── module5.md            # DPO 与对齐优化
+│   └── notes.md              # 📊 学习总结 + QA 归档
+└── chapter14/c/              # 第14章
+    ├── module1.md            # RLVR 动机与 GRPO 算法演化
+    ├── module2.md            # GRPO 训练循环、长度偏差与 Dr.GRPO
+    ├── module3.md            # DeepSeek R1 案例研究
+    ├── module4.md            # Kimi k1.5 与 Qwen 3 思考模式融合
+    ├── module5_extra.md      # ✨ GLM-5.2 全景分析（附加选学）
+    └── notes.md              # 📊 学习总结 + QA 归档
+└── chapter15/c/              # 第15章
+    ├── module1.md            # 预训练阶段的推理能力
+    ├── module2.md            # 后训练与思维链
+    ├── module3.md            # Prompt工程、工具增强与总结
+    └── notes.md              # 📊 学习总结 + QA 归档
 ```
 
 ---
@@ -174,13 +224,25 @@ docs/
 - **掌握扎实**：预热与 CUDA 同步、CUDA 坐标计算与越界检查、empty_like 优化、Triton 向量化编程模型
 - **待加强**：算术强度的实际应用（matmul 是高算术强度/计算受限）、HBM 往返的数值精度、"为什么需要手写内核"的场景化展开
 
+### 第 15 章：扩展内容（LLM 推理）
+
+| 模块 | 标题 | 得分 |
+|:----:|------|:----:|
+| 1 | 预训练阶段的推理能力 | 22/30 |
+| 2 | 后训练与思维链 | 25/30 |
+| 3 | Prompt 工程、工具增强与总结 | 23/30 |
+
+- **掌握扎实**：Pass@k 分析与概率重分配、DTR 机制（JS 散度追踪逐层预测分布）、FFN 键值记忆的深层/浅层分工、CoT Decoding vs CoT Prompting 区分、"语言是思维的载体不是思维本身"的深层理解
+- **待加强**：机制描述精度（从"现象级"到"机制级"——如 attention softmax 摊薄的具体过程）、CoT 倒 U 型的三条机理（注意力稀释 + 关键信息遗忘 + 恶性修正循环）、自我改进闭环的具体循环描述
+
 ---
 
 ## 🎯 当前建议
 
-1. **开始 Assignment 2（Systems）**：第 6-8 章对应 assignment2-systems，涉及 GPU 性能优化、算子实现、分布式训练
-2. **第 8 章学习**：分布式训练（数据并行、模型并行、ZeRO 优化）
-3. **巩固练习**：用 torch.compile 优化一个自定义算子、尝试用 Triton 重写一个逐元素操作、复习 Roofline 模型计算算术强度
+1. **🎉 全部 15 章课程已完成！** 可开始系统复习薄弱环节（见各章"待加强"部分）
+2. **补做作业**：Assignment 2 (Systems)、3 (Scaling)、4 (Data)、5 (Alignment)、6 (Evaluation) 均未开始
+3. **优先推荐**：Assignment 5（Alignment，对应第 13-14 章 RLHF/DPO/GRPO）——已完成课程理论学习，实现层面收益最大
+4. **第 14 章复习**：重点关注 `1/std` vs `1/|o_i|` 概念辨析，以及 R1/Kimi/Qwen 3 的多方法对比分析
 
 ---
 

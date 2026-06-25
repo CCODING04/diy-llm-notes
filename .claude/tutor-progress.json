@@ -1,6 +1,6 @@
 {
-  "current_chapter": 12,
-  "current_module": 5,
+  "current_chapter": 15,
+  "current_module": 3,
   "chapters": {
     "1":  { "total_modules": 2, "completed_modules": [1, 2], "status": "completed" },
     "2":  { "total_modules": 3, "completed_modules": [1, 2, 3], "status": "completed" },
@@ -14,10 +14,11 @@
     "10": { "total_modules": 3, "completed_modules": [1, 2, 3], "status": "completed" },
     "11": { "total_modules": 4, "completed_modules": [1, 2, 3, 4], "status": "completed" },
     "12": { "total_modules": 5, "completed_modules": [1, 2, 3, 4, 5], "status": "completed" },
-    "13": { "total_modules": 0, "completed_modules": [], "status": "not_started" },
-    "14": { "total_modules": 0, "completed_modules": [], "status": "not_started" },
-    "15": { "total_modules": 0, "completed_modules": [], "status": "not_started" }
+    "13": { "total_modules": 5, "completed_modules": [1, 2, 3, 4, 5], "status": "completed" },
+    "14": { "total_modules": 5, "completed_modules": [1, 2, 3, 4], "status": "completed", "extra_modules": ["module5_extra"] },
+    "15": { "total_modules": 3, "completed_modules": [1, 2, 3], "status": "completed" }
   },
+  "extra_chapters": { "glm52": { "path": "docs/chapter14/c/module5_extra.md", "description": "GLM-5.2 comprehensive analysis" } },
   "assignments": {
     "assignment1": {
       "status": "completed",
