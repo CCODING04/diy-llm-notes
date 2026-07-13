@@ -177,3 +177,148 @@ yield self.encode(part)  # 返回 list[int]，不是单个 int
 - tiktoken GPT-2 编码完全一致 ✅
 - special token 保留和匹配 ✅
 - encode_iterable 文件流式处理 ✅
+
+---
+
+## Tutorial Part 4-5: Transformer 基础算子与注意力机制 — QA 记录
+> 📅 2026-07-08
+
+### 作业批改记录
+
+#### Part 4 提交
+
+**得分：需修改后重提**
+
+##### 问题 1：Embedding 参数名 `self.weight` → `self.weights`
+
+测试用 `state_dict` 检查 key 名为 `weights`（复数），原代码写的是 `self.weight`。
+
+**修复**：`self.weights = nn.Parameter(...)` 保持与测试一致。
+
+##### 问题 2：RoPE 频率计算错误
+
+原代码 `torch.arange(0, dim_half)` 只生成了 `d_k//2` 个位置，但没有正确处理 step=2 的 stride。
+
+**修复**：`torch.arange(0, self.d_k, 2)` 直接按步长 2 生成，得到 `d_k//2` 个频率值。
+
+##### 问题 3：softmax 多余的 eps
+
+原代码 `e_x = torch.exp(x - max_val) + eps` 在 exp 后加 eps 会破坏概率和为 1 的性质。
+
+**修复**：去掉 eps，`e_x / e_x.sum(...)` 本身不会除零（因为 exp 结果 > 0）。
+
+##### 问题 4：cross_entropy 用 PyTorch 实现
+
+原作业要求用 numpy 从零实现，不能依赖 PyTorch。
+
+**修复**：纯 numpy 实现：`log_sum_exp = np.log(np.sum(np.exp(shifted), axis=-1))`。
+
+**Part 4 最终：7/7 测试通过 ✅**
+
+---
+
+#### Part 5 提交
+
+**得分：需修改后重提**
+
+##### 问题 1：`float('-inft')` 拼写错误
+
+`-inft` 不是有效的 Python，应为 `-inf`。
+
+##### 问题 2：`self.d_modal` 拼写错误
+
+两处引用了 `self.d_modal`，但 `__init__` 中定义的是 `self.d_model`。
+
+##### 问题 3：Fused QKV vs Separate Q/K/V
+
+原代码用 `self.qkv = Linear(d_model, d_model * 3)` 一次投影 Q/K/V，但测试检查 `hasattr(mha, 'w_q')`。
+
+**修复**：改为 `self.w_q, self.w_k, self.w_v, self.w_o = Linear(...)` 分开定义。
+
+##### 问题 4：forward 中残留 `self.qkv(x)` 引用
+
+修改 init 后 forward 还在调用 `self.qkv(x)`，同时 B,S 也应从 `x.shape` 获取而非从 qkv。
+
+**修复**：
+```python
+B, S, _ = x.shape
+q, k, v = self.w_q(x), self.w_k(x), self.w_v(x)
+```
+
+**Part 5 最终：3/3 测试通过 ✅**
+
+---
+
+## Tutorial Part 6: 训练基础设施 — QA 记录
+> 📅 2026-07-08
+
+### 作业批改记录
+
+#### Part 6 提交
+
+**得分：需修改后重提**
+
+##### 问题 1：Warmup 起点错误
+
+原代码：`alpha_min + (alpha_max - alpha_min) * t / T_w`（从 alpha_min 线性增长到 alpha_max）
+
+测试期望：`(t / T_w) * alpha_max`（从 0 线性增长到 alpha_max）
+
+**修复**：改用 `(t / T_w) * alpha_max`。
+
+##### 问题 2：gradient_clipping 空列表崩溃
+
+`torch.stack([])` 在空列表时会报错。当所有参数都没有梯度时触发。
+
+**修复**：
+```python
+params_with_grad = [p for p in parameters if p.grad is not None]
+if not params_with_grad:
+    return
+```
+
+**Part 6 最终：5/5 测试通过 ✅**
+
+---
+
+## Tutorial Part 7-8: 完整模型与训练 — QA 记录
+> 📅 2026-07-08
+
+### 作业批改记录
+
+#### Part 7 提交
+
+**得分：需修改后重提**
+
+##### 问题 1：相对导入错误
+
+`from .model_components import cross_entropy` 在直接运行测试时失败（没有 package 上下文）。
+
+**修复**：删除相对导入，改用 `import torch.nn.functional as F`。
+
+##### 问题 2：train 函数中 cross_entropy 未定义
+
+删除导入后 `cross_entropy(...)` 调用报 NameError。
+
+**修复**：改用 `F.cross_entropy(logits.view(-1, logits.size(-1)), y.view(-1))`。
+
+##### 问题 3：Windows 上 int32 vs int64
+
+`np.random.randint` 在 Windows 上默认生成 int32，PyTorch embedding 需要 int64。
+
+**修复**：`get_batch` 中添加 `.astype(np.int64)`。
+
+**Part 7 最终：3/3 测试通过 ✅**
+
+---
+
+#### Part 8 提交
+
+**得分：通过 ✅**
+
+Part 8（generate + evaluate + end-to-end）一次通过：
+- generate：形状正确，prompt 保留，贪心确定性 ✅
+- evaluate：返回 loss 和 perplexity ✅
+- end-to-end：训练后 PPL 从 ~70 降到 ~35 ✅
+
+**Part 8 最终：3/3 测试通过 ✅**

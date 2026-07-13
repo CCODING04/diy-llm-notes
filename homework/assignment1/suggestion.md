@@ -161,3 +161,79 @@ Part 2 经历了多轮调试，主要问题集中在三个层面：
 | BPE 算法详解 | [Sennrich et al. 2016 原始论文](https://arxiv.org/abs/1508.07909) |
 | tiktoken 教育实现 | [tiktoken/_educational.py](https://github.com/openai/tiktoken/blob/main/tiktoken/_educational.py) |
 | GPT-2 分词器 | [OpenAI GPT-2 encoder.py](https://github.com/openai/gpt-2/blob/master/src/encoder.py) |
+
+---
+
+# Assignment 1 — Part 4-8 学习建议与知识补充
+
+> 基于 Tutorial Part 4-8 期间的调试经历和错误分析生成
+> 📅 2026-07-08
+
+---
+
+## 🔴 高优先级：PyTorch 命名与接口一致性
+
+### 问题表现
+
+Parts 4-5 的核心错误几乎都是**命名不一致**：
+- `self.weight` vs `self.weights`（Embedding 参数名）
+- `self.d_modal` vs `self.d_model`（拼写错误）
+- `self.qkv` vs `self.w_q/w_k/w_v`（接口与测试不匹配）
+- `float('-inft')` vs `float('-inf')`（Python 常量拼写）
+
+### 需要掌握的知识点
+
+1. **state_dict key 由属性名决定**：`self.weight = nn.Parameter(...)` 的 key 是 `"weight"`，`self.weights = nn.Parameter(...)` 的 key 是 `"weights"`。测试用 `state_dict` 检查时必须完全匹配。
+
+2. **测试驱动实现**：写代码前先读测试，看测试检查什么属性名、什么输入输出格式，再决定实现。
+
+3. **IDE 的价值**：拼写错误（`d_modal` vs `d_model`）用 IDE 的类型检查或 linter 可以自动发现。
+
+### 练习建议
+
+- 实现新模块时，先写 `__init__` 和属性定义，然后立即写一个最小测试验证 `state_dict` 的 key
+- 养成 `hasattr(obj, 'attr')` 检查的习惯
+
+---
+
+## 🟡 中优先级：数值稳定性
+
+### 问题表现
+
+- softmax 多加了 `eps` 破坏概率和
+- cross_entropy 混用 PyTorch/numpy
+
+### 需要掌握的知识点
+
+1. **softmax 不需要 eps**：exp 结果恒 > 0，分母不会为 0。减去 max_val 是为了防溢出，不是防除零。
+
+2. **cross_entropy 的 log-sum-exp 技巧**：
+   ```
+   log_sum_exp = log(Σ exp(z_i - max_z)) + max_z
+   ```
+   直接 `log(Σ exp(z_i))` 在 z_i 很大时会溢出。
+
+3. **dtype 意识**：numpy 的 `randint` 在 Windows 上默认 int32，PyTorch embedding 需要 int64。跨平台代码要显式 `.astype(np.int64)`。
+
+---
+
+## 🟢 低优先级：训练基础设施理解
+
+### 关键概念掌握
+
+- **AdamW 解耦权重衰减**：先 Adam 更新，再乘 `(1 - lr * wd)`，而非 L2 正则化
+- **余弦退火**：warmup 从 0 → alpha_max，cosine 衰减 → alpha_min
+- **梯度裁剪**：全局 L2 范数，不是逐元素裁剪
+- **generate 的 temperature**：`logits / T`，T→0 趋近 argmax，T>1 更随机
+
+---
+
+## 📚 推荐补充学习资源
+
+| 主题 | 资源 |
+|------|------|
+| AdamW 论文 | [Loshchilov & Hutter 2019](https://arxiv.org/abs/1711.05101) |
+| RoPE 论文 | [Su et al. 2021](https://arxiv.org/abs/2104.09864) |
+| SwiGLU 论文 | [Shazeer 2020](https://arxiv.org/abs/2002.05202) |
+| Pre-Norm vs Post-Norm | [Xiong et al. 2020](https://arxiv.org/abs/2002.04745) |
+| LLM 训练实践 | [Karpathy - Let's build GPT](https://www.youtube.com/watch?v=kCc8FmEb1nY) |

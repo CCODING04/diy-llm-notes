@@ -25,9 +25,24 @@
       "parts": {
         "part1_tokenizer": "completed",
         "part2_bpe_training": "completed",
-        "part3_integration": "completed"
+        "part3_integration": "completed",
+        "part4_basic_ops": "completed",
+        "part5_attention": "completed",
+        "part6_training": "completed",
+        "part7_model": "completed",
+        "part8_generation": "completed",
+        "part9_summary": "completed"
       },
-      "completed_date": "2026-04-19"
+      "completed_date": "2026-07-08"
+    },
+    "assignment2": {
+      "status": "in_progress",
+      "parts": {
+        "part1_distributed_benchmark": "pending",
+        "part2_naive_ddp": "pending",
+        "part3_ddp_overlap": "pending",
+        "part4_sharded_optimizer": "pending"
+      }
     }
   },
   "assignments_reminded": []
