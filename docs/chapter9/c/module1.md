@@ -39,6 +39,13 @@
 
 $$ \epsilon(\hat{h}) \le \epsilon(h^*) + \mathcal{O}\left(\sqrt{\frac{d}{m}}\right) $$
 
+其中：
+- $\epsilon(\hat{h})$：学习到的假设 $\hat{h}$ 的泛化误差（测试误差）
+- $\epsilon(h^*)$：假设空间中最优假设 $h^*$ 的误差（不可约误差，反映模型类的表达能力上限）
+- $d$：假设空间的 **VC 维**，衡量模型复杂度（容量）
+- $m$：训练样本数量
+- $\mathcal{O}(\sqrt{d/m})$：估计误差上界，随样本量 $m$ 增加以 $1/\sqrt{m}$ 速率下降
+
 这本质上是一个理论版的缩放定律：误差随样本量 $m$ 的增加以 $1/\sqrt{m}$ 的速率下降。但这些是**理论上的最坏情况上界**，往往过于悲观。
 
 > 📎 **来源追溯**：VC 维理论来自 Vapnik & Chervonenkis (1971)。更详细的讨论可参考 [CMU 课程讲义](https://www.cs.cmu.edu/~epxing/Class/10701/slides/lecture16-VC.pdf)。
